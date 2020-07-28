@@ -30,6 +30,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "sys_info.h"
+
+#include "v-malloc.h"
 /**
  * Each vm will have one global accessible process. This process 
  * will contains an array of active threads, with the first thread 

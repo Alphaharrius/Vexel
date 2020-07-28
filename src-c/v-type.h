@@ -35,7 +35,8 @@ typedef uint64_t  u64;
 #define SIZE_U32  0x04
 #define SIZE_U64  0x08
 
-#define true  (u8) 0xff
-#define false (u8) 0x00
+typedef u8 boo;
+#define true  (boo) 0xff
+#define false (boo) 0x00
 
 #endif
