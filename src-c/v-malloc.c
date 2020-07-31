@@ -64,7 +64,7 @@ _initialize_heap_blocks(void *heap_alloc_ptr,
    */
   u64 realm_byte_size = total_byte_size - hyperspace_byte_size;
   /**
-   *The heap realm base address is shifted by 
+   * The heap realm base address is shifted by 
    * the hyper space byte size.
    */
   void *realm_base_address = (void *) 
@@ -192,13 +192,16 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
  *                        pointer points to the allocated bytes.
  *                        This parameter can be NULL if the memory 
  *                        address is not useful for subsequent logic.
- * @param byte_size: The byte size to be allocated.
- * TODO: Handle cases when byte_size is larger than the block size.
- * TODO: The allocator does not have to split the allocation, this 
- * TODO: will be handled by the object allocator logic.
+ * @param byte_size: The byte size to be allocated, no larger than block size.
  */
 boo 
 v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u64 byte_size) {
+  /**
+   * The allocation byte size cannot be bigger than the block size.
+   */
+  if (byte_size > HEAP_BLOCK_SIZE) {
+    return FALSE;
+  }
   u64 *ptr_address;
   /**
    * Get the index and address of the hyperspace's pointer collections,
