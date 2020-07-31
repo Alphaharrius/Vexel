@@ -82,7 +82,7 @@ static struct _heap_object {
 } v_heap;
 
 boo v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size);
-boo v_allocate_pointer(u32 *ptr_idx, void **ptr_address, u32 byte_size);
+boo v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u32 byte_size);
 void *v_get_pointer_address(u32 ptr_idx);
 void *v_pointer_roof_address(void *ptr_address);
 

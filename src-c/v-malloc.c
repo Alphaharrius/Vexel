@@ -137,6 +137,7 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
  *  (2) Search for a block where:
  *      pos_address + data_size <= roof_address
  */
+
 boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
   struct _hyperspace_object *hyperspace = &v_heap.hyperspace;
   u32 idx_max = hyperspace->idx_max;
@@ -170,7 +171,8 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
   while (heap_block_idx < heap_block_cnt) {
     if (block->base_address == block->pos_address) {
       break;
-    } else if ((u64) block->pos_address + byte_size < (u64) block->roof_address) {
+    } else if ( (u64) block->pos_address + byte_size 
+                < (u64) block->roof_address) {
       break;
     }
     block ++;
@@ -184,17 +186,39 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
   return TRUE;
 }
 /**
- * This function assigns the pointer index and address of the allocated bytes.
+ * This method assigns the pointer index and address of the allocated bytes.
  * @param ptr_idx: An u32 pointer to store the assigned index.
- * @param ptr_address:  A void pointer to be assigned to the 
- *                      pointer points to the allocated bytes.
+ * @param alloc_address:  A void pointer to be assigned to the 
+ *                        pointer points to the allocated bytes.
+ *                        This parameter can be NULL if the memory 
+ *                        address is not useful for subsequent logic.
+ * @param byte_size: The byte size to be allocated.
+ * TODO: Handle cases when byte_size is larger than the block size.
+ * TODO: The allocator does not have to split the allocation, this 
+ * TODO: will be handled by the object allocator logic.
  */
-boo v_allocate_pointer(u32 *ptr_idx, void **ptr_address, u32 byte_size) {
-  if (!_get_index_pointer(ptr_idx, (u64 **) ptr_address)) {
+boo 
+v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u64 byte_size) {
+  u64 *ptr_address;
+  /**
+   * Get the index and address of the hyperspace's pointer collections,
+   * terminate the operation if no pointers are avaliable.
+   */
+  if (!_get_index_pointer(ptr_idx, &ptr_address)) {
     return FALSE;
   }
-  if (!_allocate_realm_bytes((u64 *) *ptr_address, byte_size)) {
+  /**
+   * Allocate the pointer with the requested byte size in the heap space,
+   * terminate the operation if no allocation is avaliable.
+   */
+  if (!_allocate_realm_bytes(ptr_address, byte_size)) {
     return FALSE;
+  }
+  /**
+   * Return the address of the allocation if the external pointer is provided.
+   */
+  if (alloc_address != NULL) {
+    *alloc_address = *ptr_address;
   }
   return TRUE;
 }
