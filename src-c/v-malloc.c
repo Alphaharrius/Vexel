@@ -137,7 +137,7 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
  *  (2) Search for a block where:
  *      pos_address + data_size <= roof_address
  */
-u32 _get_index_pointer(u64 *address_ptr, u8 *boo_ptr) {
+boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
   struct _hyperspace_object *hyperspace = &v_heap.hyperspace;
   u32 idx_max = hyperspace->idx_max;
   if (hyperspace->idx_pos != idx_max) {
@@ -147,32 +147,57 @@ u32 _get_index_pointer(u64 *address_ptr, u8 *boo_ptr) {
     return hyperspace->idx_pos ++;
   } else {
     u32 idx = 0;
-    u32 *pos_address = hyperspace->base_address;
+    u64 *pos_address = hyperspace->base_address;
     while (pos_address != NULL) {
       pos_address ++;
       idx ++;
       if (idx > idx_max) {
-        *boo_ptr = FALSE;
-        return 0;
+        *ptr_idx = 0;
+        return FALSE;
       }
     }
-    *address_ptr = pos_address;
-    *boo_ptr = TRUE;
-    return idx;
+    *ptr_address = pos_address;
+    *ptr_idx = idx;
+    return TRUE;
   }
 }
 
-u32 v_allocate_pointer(u32 byte_size, u8 *byte_list, u8 *status_ptr) {
-  u64 ptr_address;
-  u8 status;
-  u32 ptr_idx = _get_index_pointer(&ptr_address, &status);
-  if (!status) {
-    *status_ptr = FALSE;
-    return 0;
+static inline boo 
+_allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
+  u32 heap_block_idx = 0;
+  u32 heap_block_cnt = v_heap.block_cnt;
+  v_heap_block_object * block = v_heap.blocks;
+  while (heap_block_idx < heap_block_cnt) {
+    if (block->base_address == block->pos_address) {
+      break;
+    } else if ((u64) block->pos_address + byte_size < (u64) block->roof_address) {
+      break;
+    }
+    block ++;
+    heap_block_idx ++;
   }
-
-  return ptr_idx;
+  if (heap_block_idx > heap_block_cnt) {
+    return FALSE;
+  }
+  *ptr_address = (u64) block->pos_address;
+  (u64) block->pos_address += byte_size;
+  return TRUE;
+}
+/**
+ * This function assigns the pointer index and address of the allocated bytes.
+ * @param ptr_idx: An u32 pointer to store the assigned index.
+ * @param ptr_address:  A void pointer to be assigned to the 
+ *                      pointer points to the allocated bytes.
+ */
+boo v_allocate_pointer(u32 *ptr_idx, void **ptr_address, u32 byte_size) {
+  if (!_get_index_pointer(ptr_idx, (u64 **) ptr_address)) {
+    return FALSE;
+  }
+  if (!_allocate_realm_bytes((u64 *) *ptr_address, byte_size)) {
+    return FALSE;
+  }
+  return TRUE;
 }
 
-void *v_index_pointer_address(u32 iptr);
+void *v_get_pointer_address(u32 ptr_idx);
 void *v_pointer_roof_address(void *ptr_address);
