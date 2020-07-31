@@ -50,7 +50,7 @@ _initialize_hyperspace( void *heap_alloc_ptr,
   hyperspace->base_address = heap_alloc_ptr;
   hyperspace->roof_address = (void *) 
       ((u64) heap_alloc_ptr + hyperspace_byte_size - 1);
-  return memset(heap_alloc_ptr, (u32) NULL, hyperspace_byte_size);
+  return memset(heap_alloc_ptr, 0, hyperspace_byte_size);
 }
 
 static inline boo 
@@ -78,7 +78,7 @@ _initialize_heap_blocks(void *heap_alloc_ptr,
   v_heap_block_object *heap_blocks = 
       calloc(heap_block_cnt, sizeof(v_heap_block_object));
   if (!heap_blocks) {
-    return FALSE;
+    return false;
   }
   v_heap.block_cnt = heap_block_cnt;
   v_heap_block_object *current_block = heap_blocks;
@@ -92,22 +92,22 @@ _initialize_heap_blocks(void *heap_alloc_ptr,
     current_block ++;
   }
   v_heap.blocks = heap_blocks;
-  return TRUE;
+  return true;
 }
 
 boo 
 v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
-  void *heap_alloc_ptr = 
+  u8 *heap_alloc_ptr = 
 /**
  * Allocate the heap based on the type of the operating system, 
  * for Windows we will use VirtualAlloc, and for Unix-based we 
  * will use mmap.
  */
 #ifdef OS_WINDOWS
-    _virtual_alloc(total_byte_size);
+    (u8 *) _virtual_alloc(total_byte_size);
 #endif
   if (!heap_alloc_ptr) {
-    return FALSE;
+    return false;
   }
   v_heap.total_byte_size = total_byte_size;
   v_heap.base_address = heap_alloc_ptr;
@@ -116,14 +116,14 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
   if (!_initialize_hyperspace(heap_alloc_ptr, 
       hyperspace_byte_size)) {
     _virtual_free(heap_alloc_ptr);
-    return FALSE;
+    return false;
   }
   if (!_initialize_heap_blocks(heap_alloc_ptr, 
       total_byte_size, hyperspace_byte_size)) {
     _virtual_free(heap_alloc_ptr);
-    return FALSE;
+    return false;
   }
-  return TRUE;
+  return true;
 }
 
 /**
@@ -145,7 +145,7 @@ boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
     /**
      * Hyperspace is not "full", ignoring unused holes.
      */
-    return hyperspace->idx_pos ++;
+    *ptr_idx = hyperspace->idx_pos ++;
   } else {
     u32 idx = 0;
     u64 *pos_address = hyperspace->base_address;
@@ -154,20 +154,20 @@ boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
       idx ++;
       if (idx > idx_max) {
         *ptr_idx = 0;
-        return FALSE;
+        return false;
       }
     }
     *ptr_address = pos_address;
     *ptr_idx = idx;
-    return TRUE;
   }
+  return true;
 }
 
 static inline boo 
 _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
   u32 heap_block_idx = 0;
   u32 heap_block_cnt = v_heap.block_cnt;
-  v_heap_block_object * block = v_heap.blocks;
+  v_heap_block_object *block = v_heap.blocks;
   while (heap_block_idx < heap_block_cnt) {
     if (block->base_address == block->pos_address) {
       break;
@@ -179,11 +179,11 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
     heap_block_idx ++;
   }
   if (heap_block_idx > heap_block_cnt) {
-    return FALSE;
+    return false;
   }
   *ptr_address = (u64) block->pos_address;
-  (u64) block->pos_address += byte_size;
-  return TRUE;
+  block->pos_address += byte_size;
+  return true;
 }
 /**
  * This method assigns the pointer index and address of the allocated bytes.
@@ -195,12 +195,12 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
  * @param byte_size: The byte size to be allocated, no larger than block size.
  */
 boo 
-v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u64 byte_size) {
+v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
   /**
    * The allocation byte size cannot be bigger than the block size.
    */
   if (byte_size > HEAP_BLOCK_SIZE) {
-    return FALSE;
+    return false;
   }
   u64 *ptr_address;
   /**
@@ -208,23 +208,27 @@ v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u64 byte_size) {
    * terminate the operation if no pointers are avaliable.
    */
   if (!_get_index_pointer(ptr_idx, &ptr_address)) {
-    return FALSE;
+    return false;
   }
   /**
    * Allocate the pointer with the requested byte size in the heap space,
    * terminate the operation if no allocation is avaliable.
    */
   if (!_allocate_realm_bytes(ptr_address, byte_size)) {
-    return FALSE;
+    return false;
   }
   /**
    * Return the address of the allocation if the external pointer is provided.
    */
   if (alloc_address != NULL) {
-    *alloc_address = *ptr_address;
+    *alloc_address = (u8 *) *ptr_address;
   }
-  return TRUE;
+  return true;
 }
 
-void *v_get_pointer_address(u32 ptr_idx);
-void *v_pointer_roof_address(void *ptr_address);
+u8 *v_pointer_address(u32 ptr_idx) {
+  if (ptr_idx >= v_heap.hyperspace.idx_max) {
+    return NULL;
+  }
+  return (u8 *) *(v_heap.hyperspace.base_address + ptr_idx);
+}

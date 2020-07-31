@@ -46,7 +46,7 @@ typedef struct {
    * access to block addresses 
    * without calculations.
    */
-  void *base_address;
+  u8 *base_address;
   /**
    * New allocations will always 
    * be added to the end of the 
@@ -57,19 +57,19 @@ typedef struct {
    * the computations to the garbrage 
    * collection logic.
    */
-  void *pos_address;
+  u8 *pos_address;
   /**
    * the roof address informs the allocator 
    * if there is still room for a incoming 
    * allocation by subtracting itself with 
    * the position address.
    */
-  void *roof_address;
+  u8 *roof_address;
 } v_heap_block_object;
 
-static struct _heap_object {
-  void *base_address;
-  void *roof_address;
+struct _heap_object {
+  u8 *base_address;
+  u8 *roof_address;
   u64 total_byte_size;
   v_heap_block_object *blocks;
   u32 block_cnt;
@@ -82,8 +82,8 @@ static struct _heap_object {
 } v_heap;
 
 boo v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size);
-boo v_allocate_pointer(u32 *ptr_idx, void **alloc_address, u32 byte_size);
-void *v_get_pointer_address(u32 ptr_idx);
-void *v_pointer_roof_address(void *ptr_address);
+void v_free_heap();
+boo v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size);
+u8 *v_pointer_address(u32 ptr_idx);
 
 #endif
