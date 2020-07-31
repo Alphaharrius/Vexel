@@ -49,6 +49,5 @@
  */
 #include "v-frame.h"
 #include "v-error.h"
-#include "v-pointer.h"
 
 #endif

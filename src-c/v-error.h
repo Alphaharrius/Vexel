@@ -28,12 +28,12 @@
 typedef struct {
   u16 error_type;
   u64 opcode_line;
-  struct v_thread_object * error_thread;
-  struct v_frame_object * error_frame;
+  struct v_thread_object *error_thread;
+  struct v_frame_object *error_frame;
 } v_error_type;
 
-void v_throw_error( struct v_thread_object * thread, 
-                    struct v_frame_object * frame, 
+void v_throw_error( struct v_thread_object *thread, 
+                    struct v_frame_object *frame, 
                     u64 opcode_line, 
                     u16 error_type);
 

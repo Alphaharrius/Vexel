@@ -70,22 +70,22 @@ typedef struct {
    * "len" stores the length of the list 
    * of returned value from the execution.
    */
-  u8 * cs_pos;
-  u8 * cs_base;
-  u8 * cs_roof;
-  u8 * dd_pos;
-  u8 * dd_base;
-  u8 * dd_roof;
-  u64 * ds_pos;
-  u64 * ds_base;
-  u64 * ds_roof;
-  u64 * rs_pos;
-  u64 * rs_base;
-  u64 * rs_len;
+  u8 *cs_pos;
+  u8 *cs_base;
+  u8 *cs_roof;
+  u8 *dd_pos;
+  u8 *dd_base;
+  u8 *dd_roof;
+  u64 *ds_pos;
+  u64 *ds_base;
+  u64 *ds_roof;
+  u64 *rs_pos;
+  u64 *rs_base;
+  u64 *rs_len;
 } v_frame_object;
 
-v_frame_object * v_make_frame();
-void v_free_frame(v_frame_object * frame);
-v_error_type v_load_opcode(v_frame_object * frame, u8 * dat_arr, u64 dat_len);
+v_frame_object *v_make_frame();
+void v_free_frame(v_frame_object *frame);
+v_error_type v_load_opcode(v_frame_object *frame, u8 *dat_arr, u64 dat_len);
 
 #endif

@@ -34,14 +34,14 @@
 #define V_THREAD_STAT_SUSPEND 0x02
 
 typedef struct {
-  v_frame_object * frame;
-  u8 * status;
-  v_error_type * es_pos;
-  v_error_type * es_base;
-  v_error_type * es_roof;
+  v_frame_object *frame;
+  u8 *status;
+  v_error_type *es_pos;
+  v_error_type *es_base;
+  v_error_type *es_roof;
 } v_thread_object;
 
-v_thread_object * v_make_thread();
-void v_free_thread(v_thread_object * thread);
+v_thread_object *v_make_thread();
+void v_free_thread(v_thread_object *thread);
 
 #endif

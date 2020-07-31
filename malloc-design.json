@@ -1,0 +1,9 @@
+{
+  "/1" : "Pointers will be buffered at 'hyperspace', which that memory is positioned in incremental ways,",
+  "/2" : "in which when a pointer will be set as NULL if its marked unused, then a new pointer can be placed",
+  "/3" : "in the holes.",
+  "pointer" : [{"address" : 8}],
+  "var-object" : [{"type" : 1}, {"data" : 8}],
+  "list-object" : [{"type" : 1}, {"size" : 1}, {"length" : 8}, {"link_ptr" : 8}, {"data_ptr" : "LENGTH"}],
+  "map-object" : [{"type" : 1}, {"val_ptr" : 8}, {"key_ptr" : 8}]
+}
