@@ -32,7 +32,7 @@ _virtual_alloc(u64 dw_size) {
 }
 static inline u32
 _virtual_free(void *lp_address) {
-  return (u32) VirtualFree((LPVOID) lp_address, 0, MEM_FREE);
+  return (u32) VirtualFree((LPVOID) lp_address, 0, MEM_RELEASE);
 }
 #endif
 
@@ -126,17 +126,16 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
   return true;
 }
 
-/**
- * Allocation Algorithm:
- *  (1) If hyperspace is not "full":
- *      Add pointer to the pos_address
- *      Else:
- *      Search for a empty space
- *      Else:
- *      Throw MAX_INDEX_ERROR
- *  (2) Search for a block where:
- *      pos_address + data_size <= roof_address
- */
+void v_free_heap() {
+  free(v_heap.blocks);
+  if (false !=
+#ifdef OS_WINDOWS
+  _virtual_free(v_heap.base_address)
+#endif
+  ) {
+    // TODO: Handle error case of VirtualFree.
+  }
+}
 
 boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
   struct _hyperspace_object *hyperspace = &v_heap.hyperspace;
@@ -185,15 +184,7 @@ _allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
   block->pos_address += byte_size;
   return true;
 }
-/**
- * This method assigns the pointer index and address of the allocated bytes.
- * @param ptr_idx: An u32 pointer to store the assigned index.
- * @param alloc_address:  A void pointer to be assigned to the 
- *                        pointer points to the allocated bytes.
- *                        This parameter can be NULL if the memory 
- *                        address is not useful for subsequent logic.
- * @param byte_size: The byte size to be allocated, no larger than block size.
- */
+
 boo 
 v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
   /**
@@ -224,11 +215,4 @@ v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
     *alloc_address = (u8 *) *ptr_address;
   }
   return true;
-}
-
-u8 *v_pointer_address(u32 ptr_idx) {
-  if (ptr_idx >= v_heap.hyperspace.idx_max) {
-    return NULL;
-  }
-  return (u8 *) *(v_heap.hyperspace.base_address + ptr_idx);
 }

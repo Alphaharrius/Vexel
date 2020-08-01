@@ -81,9 +81,39 @@ struct _heap_object {
   } hyperspace;
 } v_heap;
 
+/**
+ * A small macro to convert the heap pointer index 
+ * to the allocated memory address, this ensures 
+ * the inlining of the operation.
+ */
+#define V_POINTER_ADDRESS(idx) \
+  idx > v_heap.hyperspace.idx_max ? (u8 *) \
+      *(v_heap.hyperspace.base_address + ptr_idx) : NULL
+/**
+ * This method initializes the Vexel Heap for object data storage.
+ * @param total_byte_size: The total byte size of the heap allocation.
+ * @param hyperspace_byte_size: The byte size of the hyperspace, 
+ *                              which stores the pointer index 
+ *                              to address mapping table.
+ * @return Boolean that indicates if the operation is successful.
+ */
 boo v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size);
+/**
+ * While the process's memory will be freed on 
+ * termination, calling this function ensures 
+ * a safer process exit.
+ */
 void v_free_heap();
+/**
+ * This method assigns the pointer index and address of the allocated bytes.
+ * @param ptr_idx: An u32 pointer to store the assigned index.
+ * @param alloc_address:  A void pointer to be assigned to the 
+ *                        pointer points to the allocated bytes.
+ *                        This parameter can be NULL if the memory 
+ *                        address is not useful for subsequent logic.
+ * @param byte_size: The byte size to be allocated, no larger than block size.
+ * @return Boolean that indicates if the operation is successful.
+ */
 boo v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size);
-u8 *v_pointer_address(u32 ptr_idx);
 
 #endif

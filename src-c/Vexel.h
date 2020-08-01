@@ -33,7 +33,7 @@
 
 #include "sys_info.h"
 
-#include "v-malloc.h"
+#include "v-heap.h"
 /**
  * Each vm will have one global accessible process. This process 
  * will contains an array of active threads, with the first thread 

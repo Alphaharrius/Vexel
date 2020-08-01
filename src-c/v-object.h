@@ -26,4 +26,9 @@
 #undef  PROP_KEY_PTR_OFF
 #undef  PROP_VAL_PTR_OFF
 
+u8 *v_make_integer(u32 *ptr_idx, u64 data);
+u8 *v_make_float(u32 *ptr_idx, u64 data);
+u8 *v_make_buffer(u32 *ptr_idx, u64 buffer_size);
+u8 *v_make_map(u32 *ptr_idx, u32 map_length);
+
 #endif
