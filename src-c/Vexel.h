@@ -33,6 +33,8 @@
 
 #include "sys_info.h"
 
+#include "v-log.h"
+#include "v-error.h"
 #include "v-heap.h"
 /**
  * Each vm will have one global accessible process. This process 
@@ -48,6 +50,5 @@
  * with the thread object for evaluation.
  */
 #include "v-frame.h"
-#include "v-error.h"
 
 #endif

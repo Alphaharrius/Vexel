@@ -21,7 +21,7 @@
  * specific language governing permissions and limitations
  * under the License.
  * 
- * v-malloc.h
+ * v-heap.h
  */
 #include "v-type.h"
 
@@ -97,7 +97,7 @@ struct _heap_object {
  *                              to address mapping table.
  * @return Boolean that indicates if the operation is successful.
  */
-boo v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size);
+void v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size);
 /**
  * While the process's memory will be freed on 
  * termination, calling this function ensures 

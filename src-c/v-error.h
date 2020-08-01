@@ -24,6 +24,13 @@
  * v-error.c
  */
 #include "v-type.h"
+/**
+ * Used on critical error, the 
+ * process will be terminated.
+ */
+#define FATAL(message) \
+  PRINT(COLOR_RED, "fatal", message); \
+  exit(1);
 
 typedef struct {
   u16 error_type;

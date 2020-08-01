@@ -20,7 +20,7 @@
  * specific language governing permissions and limitations
  * under the License.
  * 
- * v-malloc.c
+ * v-heap.c
  */
 #ifdef OS_WINDOWS
 static inline void *
@@ -95,7 +95,7 @@ _initialize_heap_blocks(void *heap_alloc_ptr,
   return true;
 }
 
-boo 
+void 
 v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
   u8 *heap_alloc_ptr = 
 /**
@@ -107,7 +107,7 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
     (u8 *) _virtual_alloc(total_byte_size);
 #endif
   if (!heap_alloc_ptr) {
-    return false;
+    goto error;
   }
   v_heap.total_byte_size = total_byte_size;
   v_heap.base_address = heap_alloc_ptr;
@@ -116,14 +116,16 @@ v_initialize_heap(u64 total_byte_size, u64 hyperspace_byte_size) {
   if (!_initialize_hyperspace(heap_alloc_ptr, 
       hyperspace_byte_size)) {
     _virtual_free(heap_alloc_ptr);
-    return false;
+    goto error;
   }
   if (!_initialize_heap_blocks(heap_alloc_ptr, 
       total_byte_size, hyperspace_byte_size)) {
     _virtual_free(heap_alloc_ptr);
-    return false;
+    goto error;
   }
-  return true;
+  return;
+  error:
+  FATAL("heap initialization failed...");
 }
 
 void v_free_heap() {

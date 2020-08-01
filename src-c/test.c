@@ -1,8 +1,7 @@
 #include "Vexel.h"
 
 int main() {
-  boo status;
-  status = v_initialize_heap(0xc000, 0x2000);
+  v_initialize_heap(0xc000, 0x2000);
   u32 index;
   u8 *address;
   v_allocate_pointer(&index, &address, 0x3999);
