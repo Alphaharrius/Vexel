@@ -46,7 +46,7 @@ _initialize_hyperspace( void *heap_alloc_ptr,
                         u64 hyperspace_byte_size) {
   struct _hyperspace_object *hyperspace = &v_heap.hyperspace;
   hyperspace->idx_pos = 0;
-  hyperspace->idx_max = hyperspace_byte_size / sizeof(void *);
+  hyperspace->max_idx = hyperspace_byte_size / sizeof(void *);
   hyperspace->base_address = heap_alloc_ptr;
   hyperspace->roof_address = (void *) 
       ((u64) heap_alloc_ptr + hyperspace_byte_size - 1);
@@ -139,83 +139,88 @@ void v_free_heap() {
   }
 }
 
-boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
+boo 
+/**
+ * STEPS:
+ * 1. Lookup for an avaliable pointer index.
+ * 2. Allocate the requested byte size in the first avaliable block.
+ */
+v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
+  /**
+   * Allocation byte size bigger than block size is not allowed.
+   */
+  if (byte_size > HEAP_BLOCK_SIZE) {
+    return false;
+  }
+  /**
+   * Use of references to reduce address lookup, the "hyperspace" object 
+   * of the heap is frequently accessed by the subsequent logic.
+   */
   struct _hyperspace_object *hyperspace = &v_heap.hyperspace;
-  u32 idx_max = hyperspace->idx_max;
-  if (hyperspace->idx_pos != idx_max) {
-    /**
-     * Hyperspace is not "full", ignoring unused holes.
-     */
-    *ptr_address = hyperspace->base_address + hyperspace->idx_pos;
+  /**
+   * Temporary storage of the address of the pointer within the hyperspace.
+   */
+  u64 *ptr_address;
+  /**
+   * If the index position is not at the top, returns 
+   * the index position to speed up lookup time.
+   */
+  if (hyperspace->idx_pos <= hyperspace->max_idx) {
+    ptr_address = hyperspace->base_address + hyperspace->idx_pos;
     *ptr_idx = hyperspace->idx_pos ++;
   } else {
-    u32 idx = 0;
-    u64 *pos_address = hyperspace->base_address;
-    while (pos_address != NULL) {
-      pos_address ++;
-      idx ++;
-      if (idx > idx_max) {
-        *ptr_idx = 0;
+    /**
+     * Lookup for empty pointer index for the allocation.
+     */
+    *ptr_idx = 0;
+    ptr_address = hyperspace->base_address;
+    /**
+     * Unused pointers stores zero value => ((void *) 0) NULL.
+     */
+    while ((void *) *ptr_address == NULL) {
+      ptr_address ++;
+      *ptr_idx ++;
+      if (*ptr_idx > hyperspace->max_idx) {
         return false;
       }
     }
-    *ptr_address = pos_address;
-    *ptr_idx = idx;
   }
-  return true;
-}
-
-static inline boo 
-_allocate_realm_bytes(u64 *ptr_address, u64 byte_size) {
+  /**
+   * STEP:  Look for a avaliable lock with capacity 
+   *        for the requested byte size.
+   */
   u32 heap_block_idx = 0;
-  u32 heap_block_cnt = v_heap.block_cnt;
+  /**
+   * Use of references to reduce address lookup, the "blocks" list 
+   * of the heap is frequently accessed by the subsequent logic.
+   */
   v_heap_block_object *block = v_heap.blocks;
-  while (heap_block_idx < heap_block_cnt) {
+  while (heap_block_idx < v_heap.block_cnt) {
+    /**
+     * Select the block if its empty.
+     */
     if (block->base_address == block->pos_address) {
       break;
-    } else if ( (u64) block->pos_address + byte_size 
+    } 
+    /**
+     * Select the block if it will not 
+     * overflow after the allocation.
+     */
+    else if ( (u64) block->pos_address + byte_size 
                 < (u64) block->roof_address) {
       break;
     }
     block ++;
     heap_block_idx ++;
   }
-  if (heap_block_idx > heap_block_cnt) {
+  /**
+   * No avaliable block for the allocation.
+   */
+  if (heap_block_idx > v_heap.block_cnt) {
     return false;
   }
   *ptr_address = (u64) block->pos_address;
+  *alloc_address = block->pos_address;
   block->pos_address += byte_size;
-  return true;
-}
-
-boo 
-v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
-  /**
-   * The allocation byte size cannot be bigger than the block size.
-   */
-  if (byte_size > HEAP_BLOCK_SIZE) {
-    return false;
-  }
-  u64 *ptr_address;
-  /**
-   * Get the index and address of the hyperspace's pointer collections,
-   * terminate the operation if no pointers are avaliable.
-   */
-  if (!_get_index_pointer(ptr_idx, &ptr_address)) {
-    return false;
-  }
-  /**
-   * Allocate the pointer with the requested byte size in the heap space,
-   * terminate the operation if no allocation is avaliable.
-   */
-  if (!_allocate_realm_bytes(ptr_address, byte_size)) {
-    return false;
-  }
-  /**
-   * Return the address of the allocation if the external pointer is provided.
-   */
-  if (alloc_address != NULL) {
-    *alloc_address = (u8 *) *ptr_address;
-  }
   return true;
 }

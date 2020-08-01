@@ -2,6 +2,9 @@
 
 int main() {
   v_initialize_heap(0xc000, 0x2000);
+  u32 pi;
+  u8 *pa;
+  v_allocate_pointer(&pi, &pa, 0x456);
   u32 ptr_idx;
   if (!v_make_var_object(OBJ_TYPE_INT, &ptr_idx, 100)) {
     FATAL("Failed to allocate integer...");
