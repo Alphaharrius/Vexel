@@ -146,6 +146,7 @@ boo _get_index_pointer(u32 *ptr_idx, u64 ** ptr_address) {
     /**
      * Hyperspace is not "full", ignoring unused holes.
      */
+    *ptr_address = hyperspace->base_address + hyperspace->idx_pos;
     *ptr_idx = hyperspace->idx_pos ++;
   } else {
     u32 idx = 0;

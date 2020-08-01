@@ -87,7 +87,7 @@ struct _heap_object {
  * the inlining of the operation.
  */
 #define V_POINTER_ADDRESS(idx) \
-  idx > v_heap.hyperspace.idx_max ? (u8 *) \
+  idx < v_heap.hyperspace.idx_max ? (u8 *) \
       *(v_heap.hyperspace.base_address + ptr_idx) : NULL
 /**
  * This method initializes the Vexel Heap for object data storage.
