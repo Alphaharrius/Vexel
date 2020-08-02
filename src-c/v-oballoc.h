@@ -1,6 +1,8 @@
 #ifndef V_OBJECT_H
 #define V_OBJECT_H
-
+/**
+ * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
+ */
 #include "v-type.h"
 
 #define OBJ_TYPE_BOOL   0x01

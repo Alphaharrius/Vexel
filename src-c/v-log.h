@@ -1,6 +1,8 @@
 #ifndef V_PRINT_H
 #define V_PRINT_H
 /**
+ * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
+ * 
  * A small utility header file that wraps 
  * the printf function with coloring options.
  */

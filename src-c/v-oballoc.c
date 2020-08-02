@@ -1,7 +1,10 @@
 #include "Vexel.h"
-
+/**
+ * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
+ */
 boo 
-v_make_var_object(u8 type, u32 *ptr_idx, u64 data) {
+v_make_var_object(u8 type, u32 *ptr_idx, u64 data) 
+{
   u8 *obj_addr;
   if (!v_allocate_pointer(ptr_idx, &obj_addr, SIZE_VAR_OBJ)) {
     return false;
@@ -14,7 +17,8 @@ v_make_var_object(u8 type, u32 *ptr_idx, u64 data) {
 
 boo 
 v_make_list_object( u8 type, u32 *ptr_idx, 
-                    u8 *data, u32 list_len) {
+                    u8 *data, u32 list_len) 
+{
   /**
    * Initialize element size based on list type.
    */
@@ -143,26 +147,29 @@ v_make_list_object( u8 type, u32 *ptr_idx,
 }
 
 boo 
-v_make_map_object(u32 *ptr_idx, u32 map_len) {
+v_make_map_object(u32 *ptr_idx, u32 map_len) 
+{
   u8 *map_addr;
   if (!v_allocate_pointer(ptr_idx, &map_addr, SIZE_MAP_OBJ)) {
     return false;
   }
   *PROP_TYPE(map_addr) = OBJ_TYPE_MAP;
   
-  u32 key_ptr_idx;
+  /**
+   * Sharing the u32 to decrease memory profile.
+   */
+  u32 list_ptr_idx;
   if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
-      &key_ptr_idx, NULL, map_len)) {
+      &list_ptr_idx, NULL, map_len)) {
     return false;
   }
-  *PROP_KEY_PTR_IDX(map_addr) = key_ptr_idx;
+  *PROP_KEY_PTR_IDX(map_addr) = list_ptr_idx;
 
-  u32 val_ptr_idx;
   if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
-      &val_ptr_idx, NULL, map_len)) {
+      &list_ptr_idx, NULL, map_len)) {
     return false;
   }
-  *PROP_VAL_PTR_IDX(map_addr) = val_ptr_idx;
+  *PROP_VAL_PTR_IDX(map_addr) = list_ptr_idx;
 
   return true;
 }

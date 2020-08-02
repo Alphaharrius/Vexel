@@ -9,15 +9,15 @@ int main() {
   // if (!v_make_var_object(OBJ_TYPE_INT, &ptr_idx, 100)) {
   //   FATAL("Failed to allocate integer...");
   // }
-  // u8 *obj_address = V_POINTER_ADDRESS(ptr_idx);
-  // u8 obj_type = *PROP_TYPE(obj_address);
-  // u64 obj_data = *PROP_DATA(obj_address);
-  // printf("ptr_idx=%d\nobj_address=%llx\nobj_type=%d\nobj_data=%d\n", ptr_idx, obj_address, obj_type, obj_data);
+  // u8 *obj_addr = V_POINTER_addr(ptr_idx);
+  // u8 obj_type = *PROP_TYPE(obj_addr);
+  // u64 obj_data = *PROP_DATA(obj_addr);
+  // printf("ptr_idx=%d\nobj_addr=%llx\nobj_type=%d\nobj_data=%d\n", ptr_idx, obj_addr, obj_type, obj_data);
   u32 list_idx;
   if (!v_make_list_object(OBJ_TYPE_LIST_STR, &list_idx, NULL, 0x5000)) {
     FATAL("Failed to allocate list...");
   }
-  u8 * list_addr = V_POINTER_ADDRESS(list_idx);
+  u8 * list_addr = V_POINTER_addr(list_idx);
   u8 list_type = *PROP_TYPE(list_addr);
   u32 list_len = *PROP_LEN(list_addr);
   u32 list_link_ptr_idx = *PROP_LINK_PTR_IDX(list_addr);
