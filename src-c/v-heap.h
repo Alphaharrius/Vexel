@@ -66,7 +66,7 @@ struct _heap_object {
  * to the allocated memory address, this ensures 
  * the inlining of the operation.
  */
-#define V_POINTER_addr(ptr_idx) \
+#define V_PTR_ADDR(ptr_idx) \
   ptr_idx < v_heap.hyperspace.max_idx ? (u8 *) \
       *(v_heap.hyperspace.base_addr + ptr_idx) : NULL
 /**
