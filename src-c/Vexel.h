@@ -36,7 +36,7 @@
 #include "v-log.h"
 #include "v-error.h"
 #include "v-heap.h"
-#include "v-object.h"
+#include "v-oballoc.h"
 /**
  * Each vm will have one global accessible process. This process 
  * will contains an array of active threads, with the first thread 

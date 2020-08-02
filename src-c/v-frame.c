@@ -35,18 +35,18 @@ v_make_frame(u32 ret_len) {
    */
   v_frame_object *frame = malloc(sizeof(v_frame_object));
   if (!frame) return frame;
-  u8 *dd_pos = calloc(V_DS_LEN, SIZE_U8);
+  u8 *dd_pos = calloc(V_DS_LEN, SIZE_8);
   if (!dd_pos) {
     free(frame);
     return dd_pos;
   }
-  u64 *ds_pos = calloc(V_DS_LEN, SIZE_U64);
+  u64 *ds_pos = calloc(V_DS_LEN, SIZE_64);
   if (!ds_pos) {
     free(frame);
     free(dd_pos);
     return ds_pos;
   }
-  u64 *rs_pos = calloc(ret_len, SIZE_U64);
+  u64 *rs_pos = calloc(ret_len, SIZE_64);
   if (!rs_pos) {
     free(frame);
     free(dd_pos);

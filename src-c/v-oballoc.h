@@ -19,7 +19,7 @@
 /**
  * ALL: Offset 1 byte, from the "type" property.
  */
-#define PROP_SIZE_OFF SIZE_U8
+#define PROP_SIZE_OFF SIZE_8
 /**
  * VAR: Offset 1 byte, from the "type" property.
  */
@@ -27,15 +27,15 @@
 /**
  * LIST: Offset 1 byte, from the "size" property.
  */
-#define PROP_LEN_OFF  PROP_SIZE_OFF + SIZE_U8
+#define PROP_LEN_OFF  PROP_SIZE_OFF + SIZE_8
 /**
  * LIST: Offset 8 bytes, from the "len" property.
  */
-#define PROP_LINK_PTR_IDX_OFF PROP_LEN_OFF + SIZE_U64
+#define PROP_LINK_PTR_IDX_OFF PROP_LEN_OFF + SIZE_64
 /**
  * LIST: Offset 4 bytes, from the "link_ptr_idx" property.
  */
-#define PROP_DATA_ARRAY_OFF PROP_LINK_PTR_IDX_OFF + SIZE_U32
+#define PROP_DATA_ARRAY_OFF PROP_LINK_PTR_IDX_OFF + SIZE_32
 /**
  * MAP: Offset 1 byte, from the "size" property.
  */
@@ -43,7 +43,7 @@
 /**
  * MAP: Offset 8 bytes, from the "key_ptr_idx" property.
  */
-#define PROP_VAL_PTR_IDX_OFF  PROP_KEY_PTR_IDX_OFF + SIZE_U32
+#define PROP_VAL_PTR_IDX_OFF  PROP_KEY_PTR_IDX_OFF + SIZE_32
 /**
  * ALL: "type" property, defines the type of the object.
  *  The types of object:  
@@ -54,45 +54,45 @@
  *    MAP: map
  *      - Key-Value mapped object.
  */
-#define PROP_TYPE(address) *(u8 *) address
+#define PROP_TYPE(address) (u8 *) address
 /**
  * LIST: "size" property, defines the size of each element in the list.
  */
-#define PROP_SIZE(address) *(u8 *) (address + PROP_SIZE_OFF)
+#define PROP_SIZE(address) (u8 *) (address + PROP_SIZE_OFF)
 /**
  * VAR: "data" property defines the data of the variable.
  */
-#define PROP_DATA(address) *(u64 *) (address + PROP_DATA_OFF)
+#define PROP_DATA(address) (u64 *) (address + PROP_DATA_OFF)
 /**
  * LIST: "len" property defines the length of the list.
  */
-#define PROP_LEN(address) *(u64 *) (address + PROP_LEN_OFF)
+#define PROP_LEN(address) (u64 *) (address + PROP_LEN_OFF)
 /**
  * LIST:  "link_ptr_idx" property defines the pointer index 
  *        of the next section of the list object, used for 
  *        lists those length longer than one block size.
  */
-#define PROP_LINK_PTR_IDX(address) *(u32 *) (address + PROP_LINK_PTR_IDX_OFF)
+#define PROP_LINK_PTR_IDX(address) (u32 *) (address + PROP_LINK_PTR_IDX_OFF)
 /**
  * LIST:  "data_array" property stores the data array of the list, 
  *        the size of this property is defined in the "len" property.
  */
-#define PROP_DATA_ARRAY(address) *(u64 *) (address + PROP_DATA_ARRAY_OFF)
+#define PROP_DATA_ARRAY(address) (u64 *) (address + PROP_DATA_ARRAY_OFF)
 /**
  * MAP: "key_ptr_idx" property stores the pointer index of the key list.
  */
-#define PROP_KEY_PTR_IDX(address) *(u64 *) (address + PROP_KEY_PTR_IDX_OFF)
+#define PROP_KEY_PTR_IDX(address) (u64 *) (address + PROP_KEY_PTR_IDX_OFF)
 /**
  * MAP: "val_ptr_idx" property stores the pointer index of the value list.
  */
-#define PROP_VAL_PTR_IDX(address) *(u64 *) (address + PROP_VAL_PTR_IDX_OFF)
+#define PROP_VAL_PTR_IDX(address) (u64 *) (address + PROP_VAL_PTR_IDX_OFF)
 
-#define SIZE_VAR_OBJ PROP_DATA_OFF + SIZE_U64
+#define SIZE_VAR_OBJ PROP_DATA_OFF + SIZE_64
 #define SIZE_LIST_OBJ_BASE PROP_DATA_ARRAY_OFF
-#define SIZE_MAP_OBJ PROP_VAL_PTR_IDX_OFF + SIZE_U32
+#define SIZE_MAP_OBJ PROP_VAL_PTR_IDX_OFF + SIZE_32
 
 boo v_make_var_object(u8 type, u32 *ptr_idx, u64 data);
-boo v_make_list_object(u8 type, u32 *ptr_idx, u32 list_size);
+boo v_make_list_object(u8 type, u32 *ptr_idx, u8 *list_data, u32 list_len);
 boo v_make_map_object(u32 *ptr_idx, u32 map_length);
 
 #endif
