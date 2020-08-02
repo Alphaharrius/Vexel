@@ -104,7 +104,6 @@ boo v_make_var_object(u8 type, u32 *ptr_idx, u64 data);
  * @param type: The type of the list object, must be one of the type list.
  * @param ptr_idx: The u32 to store the pointer index of the object allocation.
  * @param data: The data list to be stored in this list object, NULL is acceptable.
- * @param data_size: The byte size of the data.
  * @param list_len: The length of the list elements.
  * @return: Status of the operation in boolean.
  */
