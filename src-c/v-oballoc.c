@@ -54,11 +54,11 @@ v_make_list_object( u8 type, u32 *ptr_idx,
   if (list_size > v_heap.total_byte_size) {
     return false;
   }
-  u32 ptr_idx;
+  u32 sec_ptr_idx;
   u8 *sec_addr;
 
 #define SEC_ALLOC(list_size, data_size) \
-  if (!v_allocate_pointer(&ptr_idx, &sec_addr, list_size)) { \
+  if (!v_allocate_pointer(&sec_ptr_idx, &sec_addr, list_size)) { \
     return false; \
   } \
   *PROP_TYPE(sec_addr) = type; \
@@ -93,9 +93,10 @@ v_make_list_object( u8 type, u32 *ptr_idx,
 
 #define LINK_TO_PRIOR() \
   if (! prior_sec_addr) { \
-    *PROP_LINK_PTR_IDX(prior_sec_addr) = ptr_idx; \
+    *PROP_LINK_PTR_IDX(prior_sec_addr) = sec_ptr_idx; \
   }
 
+  u8 is_ptr_idx_set = false;
   /**
    * Allocate all sectors except the last one.
    */
@@ -106,6 +107,14 @@ v_make_list_object( u8 type, u32 *ptr_idx,
      * collection will collect all unused allocations.
      */
     SEC_ALLOC(HEAP_BLOCK_SIZE, SEC_SIZE);
+    /**
+     * Set the pointer index of the list to the 
+     * index of the first sector.
+     */
+    if (!is_ptr_idx_set) {
+      *ptr_idx = sec_ptr_idx;
+      is_ptr_idx_set = true;
+    }
     /**
      * Offset the data pointer to the next segment position.
      */
@@ -135,7 +144,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
 boo 
 v_make_map_object(u32 *ptr_idx, u32 map_len) {
   u8 *map_addr;
-  if (!v_allocate_pointer(ptr_idx, map_addr, SIZE_MAP_OBJ)) {
+  if (!v_allocate_pointer(ptr_idx, &map_addr, SIZE_MAP_OBJ)) {
     return false;
   }
   *PROP_TYPE(map_addr) = OBJ_TYPE_MAP;
@@ -143,13 +152,15 @@ v_make_map_object(u32 *ptr_idx, u32 map_len) {
   u64 data_size = map_len * SIZE_64;
   
   u32 key_ptr_idx;
-  if (!v_make_list_object(OBJ_TYPE_LIST_PTR, &key_ptr_idx, NULL, data_size, map_len)) {
+  if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
+      &key_ptr_idx, NULL, data_size, map_len)) {
     return false;
   }
   *PROP_KEY_PTR_IDX(map_addr) = key_ptr_idx;
 
   u32 val_ptr_idx;
-  if (!v_make_list_object(OBJ_TYPE_LIST_PTR, &val_ptr_idx, NULL, data_size, map_len)) {
+  if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
+      &val_ptr_idx, NULL, data_size, map_len)) {
     return false;
   }
   *PROP_VAL_PTR_IDX(map_addr) = val_ptr_idx;
