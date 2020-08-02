@@ -14,8 +14,7 @@ v_make_var_object(u8 type, u32 *ptr_idx, u64 data) {
 
 boo 
 v_make_list_object( u8 type, u32 *ptr_idx, 
-                    u8 *data, u64 data_size, 
-                    u32 list_len) {
+                    u8 *data, u32 list_len) {
   /**
    * Initialize element size based on list type.
    */
@@ -47,6 +46,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     default:
     return false;
   }
+  u64 data_size = list_len * elem_size; 
   u64 list_size = SIZE_LIST_OBJ_BASE + data_size;
   /**
    * List size cannot be greater than heap size.
@@ -57,17 +57,17 @@ v_make_list_object( u8 type, u32 *ptr_idx,
   u32 sec_ptr_idx;
   u8 *sec_addr;
 
-#define SEC_ALLOC(list_size, data_size) \
-  if (!v_allocate_pointer(&sec_ptr_idx, &sec_addr, list_size)) { \
+#define SEC_ALLOC(_list_size, _list_len, _data_size) \
+  if (!v_allocate_pointer(&sec_ptr_idx, &sec_addr, _list_size)) { \
     return false; \
   } \
   *PROP_TYPE(sec_addr) = type; \
   *PROP_SIZE(sec_addr) = elem_size; \
-  *PROP_LEN(sec_addr) = list_len; \
+  *PROP_LEN(sec_addr) = _list_len; \
   if (data) { \
-    memcpy(PROP_DATA_ARRAY(sec_addr), data, data_size); \
+    memcpy(PROP_DATA_ARRAY(sec_addr), data, _data_size); \
   } else { \
-    memset(PROP_DATA_ARRAY(sec_addr), 0, data_size); \
+    memset(PROP_DATA_ARRAY(sec_addr), 0, _data_size); \
   }
 
   /**
@@ -75,7 +75,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
    * allocate the whole section directly.
    */
   if (list_size < HEAP_BLOCK_SIZE) {
-    SEC_ALLOC(list_size, data_size);
+    SEC_ALLOC(list_size, list_len, data_size);
     return true;
   }
 
@@ -106,7 +106,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
      * not be freed instantly, as we assumes the garbage 
      * collection will collect all unused allocations.
      */
-    SEC_ALLOC(HEAP_BLOCK_SIZE, SEC_SIZE);
+    SEC_ALLOC(HEAP_BLOCK_SIZE, sec_len, SEC_SIZE);
     /**
      * Set the pointer index of the list to the 
      * index of the first sector.
@@ -118,7 +118,9 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     /**
      * Offset the data pointer to the next segment position.
      */
-    data += SEC_SIZE;
+    if (data) {
+      data += SEC_SIZE;
+    }
     LINK_TO_PRIOR();
     /**
      * Set the prior sector pointer to the current pointer.
@@ -126,7 +128,6 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     prior_sec_addr = sec_addr;
   }
 #undef SEC_SIZE
-
   u16 rem_len = list_len % sec_len;
   /**
    * Skip if no remaining items.
@@ -135,8 +136,10 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     return true;
   }
   u16 rem_size = rem_len * elem_size;
-  SEC_ALLOC(SIZE_LIST_OBJ_BASE + rem_size, rem_size);
-  LINK_TO_PRIOR();
+  SEC_ALLOC(SIZE_LIST_OBJ_BASE + rem_size, rem_len, rem_size);
+  if (prior_sec_addr) {
+    *PROP_LINK_PTR_IDX(prior_sec_addr) = sec_ptr_idx;
+  }
 
   return true;
 }
@@ -148,19 +151,17 @@ v_make_map_object(u32 *ptr_idx, u32 map_len) {
     return false;
   }
   *PROP_TYPE(map_addr) = OBJ_TYPE_MAP;
-
-  u64 data_size = map_len * SIZE_64;
   
   u32 key_ptr_idx;
   if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
-      &key_ptr_idx, NULL, data_size, map_len)) {
+      &key_ptr_idx, NULL, map_len)) {
     return false;
   }
   *PROP_KEY_PTR_IDX(map_addr) = key_ptr_idx;
 
   u32 val_ptr_idx;
   if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
-      &val_ptr_idx, NULL, data_size, map_len)) {
+      &val_ptr_idx, NULL, map_len)) {
     return false;
   }
   *PROP_VAL_PTR_IDX(map_addr) = val_ptr_idx;

@@ -31,7 +31,7 @@
 /**
  * LIST: Offset 8 bytes, from the "len" property.
  */
-#define PROP_LINK_PTR_IDX_OFF PROP_LEN_OFF + SIZE_64
+#define PROP_LINK_PTR_IDX_OFF PROP_LEN_OFF + SIZE_32
 /**
  * LIST: Offset 4 bytes, from the "link_ptr_idx" property.
  */
@@ -66,7 +66,7 @@
 /**
  * LIST: "len" property defines the length of the list.
  */
-#define PROP_LEN(addr) (u64 *) (addr + PROP_LEN_OFF)
+#define PROP_LEN(addr) (u32 *) (addr + PROP_LEN_OFF)
 /**
  * LIST:  "link_ptr_idx" property defines the pointer index 
  *        of the next section of the list object, used for 
@@ -91,8 +91,30 @@
 #define SIZE_LIST_OBJ_BASE PROP_DATA_ARRAY_OFF
 #define SIZE_MAP_OBJ PROP_VAL_PTR_IDX_OFF + SIZE_32
 
+/**
+ * Create a var object in the heap.
+ * @param type: The type of the var object, no enforcement is in place.
+ * @param ptr_idx: The u32 to store the pointer index of the object allocation.
+ * @param data: The data to be stored in this object.
+ * @return: Status of the operation in boolean.
+ */
 boo v_make_var_object(u8 type, u32 *ptr_idx, u64 data);
-boo v_make_list_object( u8 type, u32 *ptr_idx, u8 *data, u64 data_size, u32 list_len);
+/**
+ * Create a list object in the heap.
+ * @param type: The type of the list object, must be one of the type list.
+ * @param ptr_idx: The u32 to store the pointer index of the object allocation.
+ * @param data: The data list to be stored in this list object, NULL is acceptable.
+ * @param data_size: The byte size of the data.
+ * @param list_len: The length of the list elements.
+ * @return: Status of the operation in boolean.
+ */
+boo v_make_list_object(u8 type, u32 *ptr_idx, u8 *data, u32 list_len);
+/**
+ * Create a map object in the heap.
+ * @param ptr_idx: The u32 to store the pointer index of the object allocation.
+ * @param map_len: The length of the map's key-value pair.
+ * @return: Status of the operation in boolean.
+ */
 boo v_make_map_object(u32 *ptr_idx, u32 map_len);
 
 #endif

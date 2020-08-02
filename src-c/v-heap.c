@@ -222,5 +222,6 @@ v_allocate_pointer(u32 *ptr_idx, u8 **alloc_address, u64 byte_size) {
   *ptr_address = (u64) block->pos_address;
   *alloc_address = block->pos_address;
   block->pos_address += byte_size;
+  
   return true;
 }
