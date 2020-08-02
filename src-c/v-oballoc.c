@@ -137,9 +137,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
   }
   u16 rem_size = rem_len * elem_size;
   SEC_ALLOC(SIZE_LIST_OBJ_BASE + rem_size, rem_len, rem_size);
-  if (prior_sec_addr) {
-    *PROP_LINK_PTR_IDX(prior_sec_addr) = sec_ptr_idx;
-  }
+  LINK_TO_PRIOR();
 
   return true;
 }
