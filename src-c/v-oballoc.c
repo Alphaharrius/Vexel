@@ -51,7 +51,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     return false;
   }
   u64 data_size = list_len * elem_size; 
-  u64 list_size = SIZE_LIST_OBJ_BASE + data_size;
+  u64 list_size = SIZE_LIST_OBJ_HEAD + data_size;
   /**
    * List size cannot be greater than heap size.
    */
@@ -69,9 +69,9 @@ v_make_list_object( u8 type, u32 *ptr_idx,
   *PROP_SIZE(sec_addr) = elem_size; \
   *PROP_LEN(sec_addr) = _list_len; \
   if (data) { \
-    memcpy(PROP_DATA_ARRAY(sec_addr), data, _data_size); \
+    memcpy(PROP_DBUFF(sec_addr), data, _data_size); \
   } else { \
-    memset(PROP_DATA_ARRAY(sec_addr), 0, _data_size); \
+    memset(PROP_DBUFF(sec_addr), 0, _data_size); \
   }
 
   /**
@@ -83,7 +83,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     return true;
   }
 
-#define SEC_SIZE HEAP_BLOCK_SIZE - SIZE_LIST_OBJ_BASE
+#define SEC_SIZE HEAP_BLOCK_SIZE - SIZE_LIST_OBJ_HEAD
   /**
    * The length of elements of one sector.
    */
@@ -93,11 +93,17 @@ v_make_list_object( u8 type, u32 *ptr_idx,
    * elements will be allocated after this iteration.
    */
   u32 sec_cnt = list_len / sec_len;
-  u8 *prior_sec_addr;
+  /**
+   * C pointer without initialization might have random 
+   * value, initialize uninstantiated pointer which is 
+   * used for null checking to NULL.
+   */
+  u8 *prior_sec_addr = NULL;
 
 #define LINK_TO_PRIOR() \
-  if (! prior_sec_addr) { \
-    *PROP_LINK_PTR_IDX(prior_sec_addr) = sec_ptr_idx; \
+  printf("%llx\n", prior_sec_addr); \
+  if (prior_sec_addr) { \
+    *PROP_LPTRI(prior_sec_addr) = sec_ptr_idx; \
   }
 
   u8 is_ptr_idx_set = false;
@@ -118,6 +124,12 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     if (!is_ptr_idx_set) {
       *ptr_idx = sec_ptr_idx;
       is_ptr_idx_set = true;
+      /**
+       * Set the total len of the list to the header 
+       * sector to speed up list length retrieval and 
+       * c array construction operations.
+       */
+      *PROP_TLEN(sec_addr) = list_len;
     }
     /**
      * Offset the data pointer to the next segment position.
@@ -140,7 +152,7 @@ v_make_list_object( u8 type, u32 *ptr_idx,
     return true;
   }
   u16 rem_size = rem_len * elem_size;
-  SEC_ALLOC(SIZE_LIST_OBJ_BASE + rem_size, rem_len, rem_size);
+  SEC_ALLOC(SIZE_LIST_OBJ_HEAD + rem_size, rem_len, rem_size);
   LINK_TO_PRIOR();
 
   return true;
@@ -163,13 +175,13 @@ v_make_map_object(u32 *ptr_idx, u32 map_len)
       &list_ptr_idx, NULL, map_len)) {
     return false;
   }
-  *PROP_KEY_PTR_IDX(map_addr) = list_ptr_idx;
+  *PROP_KPTRI(map_addr) = list_ptr_idx;
 
   if (!v_make_list_object(OBJ_TYPE_LIST_PTR, 
       &list_ptr_idx, NULL, map_len)) {
     return false;
   }
-  *PROP_VAL_PTR_IDX(map_addr) = list_ptr_idx;
+  *PROP_VPTRI(map_addr) = list_ptr_idx;
 
   return true;
 }

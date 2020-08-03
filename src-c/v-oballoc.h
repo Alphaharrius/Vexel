@@ -31,21 +31,25 @@
  */
 #define PROP_LEN_OFF  PROP_SIZE_OFF + SIZE_8
 /**
- * LIST: Offset 8 bytes, from the "len" property.
+ * LIST: Offset 4 byte, from the "len" property.
  */
-#define PROP_LINK_PTR_IDX_OFF PROP_LEN_OFF + SIZE_32
+#define PROP_TLEN_OFF PROP_LEN_OFF + SIZE_32
 /**
- * LIST: Offset 4 bytes, from the "link_ptr_idx" property.
+ * LIST: Offset 8 bytes, from the "tlen" property.
  */
-#define PROP_DATA_ARRAY_OFF PROP_LINK_PTR_IDX_OFF + SIZE_32
+#define PROP_LPTRI_OFF PROP_TLEN_OFF + SIZE_64
+/**
+ * LIST: Offset 4 bytes, from the "LPTR_IDX" property.
+ */
+#define PROP_DBUFF_OFF PROP_LPTRI_OFF + SIZE_32
 /**
  * MAP: Offset 1 byte, from the "size" property.
  */
-#define PROP_KEY_PTR_IDX_OFF  PROP_SIZE_OFF
+#define PROP_KPTRI_OFF  PROP_SIZE_OFF
 /**
  * MAP: Offset 8 bytes, from the "key_ptr_idx" property.
  */
-#define PROP_VAL_PTR_IDX_OFF  PROP_KEY_PTR_IDX_OFF + SIZE_32
+#define PROP_VPTRI_OFF  PROP_KPTRI_OFF + SIZE_32
 /**
  * ALL: "type" property, defines the type of the object.
  *  The types of object:  
@@ -70,28 +74,33 @@
  */
 #define PROP_LEN(addr) (u32 *) (addr + PROP_LEN_OFF)
 /**
- * LIST:  "link_ptr_idx" property defines the pointer index 
+ * LIST:  "tlen" property defines the total length of the list, 
+ *        this will be 0 except for the head sector.
+ */
+#define PROP_TLEN(addr) (u64 *) (addr + PROP_TLEN_OFF)
+/**
+ * LIST:  "LPTR_IDX" property defines the pointer index 
  *        of the next section of the list object, used for 
  *        lists those length longer than one block size.
  */
-#define PROP_LINK_PTR_IDX(addr) (u32 *) (addr + PROP_LINK_PTR_IDX_OFF)
+#define PROP_LPTRI(addr) (u32 *) (addr + PROP_LPTRI_OFF)
 /**
  * LIST:  "data_array" property stores the data array of the list, 
  *        the size of this property is defined in the "len" property.
  */
-#define PROP_DATA_ARRAY(addr) (u64 *) (addr + PROP_DATA_ARRAY_OFF)
+#define PROP_DBUFF(addr) (u64 *) (addr + PROP_DBUFF_OFF)
 /**
  * MAP: "key_ptr_idx" property stores the pointer index of the key list.
  */
-#define PROP_KEY_PTR_IDX(addr) (u64 *) (addr + PROP_KEY_PTR_IDX_OFF)
+#define PROP_KPTRI(addr) (u64 *) (addr + PROP_KPTRI_OFF)
 /**
  * MAP: "val_ptr_idx" property stores the pointer index of the value list.
  */
-#define PROP_VAL_PTR_IDX(addr) (u64 *) (addr + PROP_VAL_PTR_IDX_OFF)
+#define PROP_VPTRI(addr) (u64 *) (addr + PROP_VPTRI_OFF)
 
 #define SIZE_VAR_OBJ PROP_DATA_OFF + SIZE_64
-#define SIZE_LIST_OBJ_BASE PROP_DATA_ARRAY_OFF
-#define SIZE_MAP_OBJ PROP_VAL_PTR_IDX_OFF + SIZE_32
+#define SIZE_LIST_OBJ_HEAD PROP_DBUFF_OFF
+#define SIZE_MAP_OBJ PROP_VPTRI_OFF + SIZE_32
 
 /**
  * Create a var object in the heap.

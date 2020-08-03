@@ -20,7 +20,9 @@ int main() {
   u8 * list_addr = V_PTR_ADDR(list_idx);
   u8 list_type = *PROP_TYPE(list_addr);
   u32 list_len = *PROP_LEN(list_addr);
-  u32 list_link_ptr_idx = *PROP_LINK_PTR_IDX(list_addr);
-  printf("list_idx=%d\nlist_addr=%llx\nlist_type=%d\nlist_len=%d\nlist_link_ptr_idx=%d\n", list_idx, list_addr, list_type, list_len, list_link_ptr_idx);
+  u32 list_link_ptr_idx = *PROP_LPTRI(list_addr);
+  u64 list_total_len = *PROP_TLEN(list_addr);
+  printf("list_idx=%d\nlist_addr=%llx\nlist_type=%d\nlist_len=%d\nlist_link_ptr_idx=%d\nlist_total_len=%llx\n", 
+      list_idx, list_addr, list_type, list_len, list_link_ptr_idx, list_total_len);
   return 0;
 }
