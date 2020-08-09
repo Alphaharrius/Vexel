@@ -14,7 +14,16 @@
  * and one pool (a large memory chunk for other allocations).
  * In such way the rearrange operation can be performed 
  * on specific chunks but not on the whole heap space.
+ * 
+ * PROBLEM: Currently the Vexel Heap is not thread safe, 
+ * where problem might arise if multiple thread is trying 
+ * to perform heap operations.
+ * 
+ * FIX: The use of mutexs can use to lock specific 
+ * operations for a single thread.
+ * 
  */
+
 static inline void *
 /**
  * Allocation of private memory chunks using the 
