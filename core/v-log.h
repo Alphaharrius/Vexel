@@ -1,8 +1,10 @@
-#ifndef V_PRINT_H
-#define V_PRINT_H
+#ifndef V_LOG_H
+#define V_LOG_H
+#pragma once
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
+ * v-log.h
  * A small utility header file that wraps 
  * the printf function with coloring options.
  */
@@ -20,7 +22,7 @@
 #define COLOR_CYAN          "[0;36m"
 #define COLOR_BOLD_CYAN     "[1;36m"
 
-#define PRINT(COLOR, title, message) \
-  printf("\033%s[%s]\t%s\033%s\n", COLOR, title, message, COLOR_DEFAULT)
+#define LOG(color, head, text) \
+  printf("\033%s[%s]\t%s\033%s\n", color, head, text, COLOR_DEFAULT)
 
 #endif
