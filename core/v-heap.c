@@ -232,6 +232,38 @@ v_heap_reallocate(v_pointer_object *ptr, u64 size)
     memcpy(ptr->mem_addr, prior_addr, size);
   }
 
+  /**
+   * To make the rearranging algorithm works, the pointer 
+   * linked list must be updated, which the reallocated 
+   * pointer must be moved to the end so the ordering or 
+   * the allocation will be single directioned.
+   */
+  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
+  /**
+   * Check if this is the last pointer in the linked list,
+   */
+  if (ptr_table->end_ptr != ptr) {
+    /**
+     * Set the starting pointer of the 
+     * linked list to the next pointer 
+     * of the current pointer.
+     */
+    ptr_table->start_ptr = 
+        ptr_table->base_ptr + ptr->next_idx;
+    /**
+     * Link the current pointer to the 
+     * end of the linked list.
+     */
+    ptr_table->end_ptr->next_idx = 
+        ptr - ptr_table->base_ptr;
+    ptr_table->end_ptr = ptr;
+    /**
+     * Set the next pointer of the current 
+     * pointer to null pointer.
+     */
+    ptr->next_idx = 0;
+  }
+
   return V_ERR_NONE;
 }
 
