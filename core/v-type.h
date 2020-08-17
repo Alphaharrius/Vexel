@@ -4,6 +4,7 @@
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  */
+
 #include <stdint.h>
 
 typedef uint8_t   u8;
@@ -15,8 +16,5 @@ typedef uint64_t  u64;
 #define SIZE_16  0x02
 #define SIZE_32  0x04
 #define SIZE_64  0x08
-
-#define _TRUE   (u8) 0xFF
-#define _FALSE  (u8) 0x00
 
 #endif

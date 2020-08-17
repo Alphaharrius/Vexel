@@ -8,6 +8,7 @@
  * A small utility header file that wraps 
  * the printf function with coloring options.
  */
+
 #define COLOR_DEFAULT       "[0m"
 #define COLOR_RED           "[0;31m"
 #define COLOR_BOLD_RED      "[1;31m"

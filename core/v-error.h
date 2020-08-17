@@ -9,6 +9,7 @@
  * Vexel Virtual Machine for handling internal or 
  * runtime exceptions.
  */
+
 #include "v-log.h"
 
 #define EXIT_STAT_NONE   0
@@ -35,8 +36,12 @@ typedef enum {
   V_ERR_HEAP_NO_BLK,
   V_ERR_OBJ_NULL,
   V_ERR_OBJ_NOT_VAR,
-  V_ERR_OBJ_NOT_LIST,
-  V_ERR_OBJ_NOT_MAP
+  V_ERR_OBJ_NOT_LST,
+  V_ERR_OBJ_NOT_MAP,
+  V_ERR_OBJ_TYP_UNMATCH,
+  V_ERR_LST_MAX_LEN
 } v_err;
+
+#define IS_ERR(status) status != V_ERR_NONE
 
 #endif
