@@ -1,5 +1,9 @@
 #include "Vexel.h"
 /**
+ * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
+ * 
+ * v-heap.c
+ * 
  * INFO: Please inline all logic into the methods 
  * within this file, as this file aims for the 
  * least overhead to ensure heap performance.
@@ -21,6 +25,16 @@
  * 
  * FIX: The use of mutexs can use to lock specific 
  * operations for a single thread.
+ * 
+ * PROBLEM: The linked list algorithm to sort out 
+ * the heap order might induce significant overhead 
+ * in normal allocation and reallocations.
+ * The linked list will also induces large memory 
+ * overhead within the heap object space.
+ * 
+ * FIX: Remove the linked list implementation and 
+ * use dual pivot quick sort by the address to 
+ * sort the heap ordering.
  * 
  */
 
@@ -171,8 +185,18 @@ v_heap_allocate(v_pointer_object **ptr, u64 size)
    * to the end of the linked list.
    */
   else {
+    /**
+     * Set the next index of the current 
+     * end pointer to this pointer.
+     */
     ptr_table->end_ptr->next_idx = 
         p - ptr_table->base_ptr;
+    /**
+     * Set the prior index of this pointer 
+     * to the current end pointer.
+     */
+    p->prior_idx = 
+        ptr_table->end_ptr - ptr_table->base_ptr;
     /**
      * Set the current pointer to 
      * the end of the linked list.
@@ -239,30 +263,29 @@ v_heap_reallocate(v_pointer_object *ptr, u64 size)
    * the allocation will be single directioned.
    */
   struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-  /**
-   * Check if this is the last pointer in the linked list,
-   */
-  if (ptr_table->end_ptr != ptr) {
-    /**
-     * Set the starting pointer of the 
-     * linked list to the next pointer 
-     * of the current pointer.
-     */
-    ptr_table->start_ptr = 
-        ptr_table->base_ptr + ptr->next_idx;
-    /**
-     * Link the current pointer to the 
-     * end of the linked list.
-     */
-    ptr_table->end_ptr->next_idx = 
-        ptr - ptr_table->base_ptr;
-    ptr_table->end_ptr = ptr;
-    /**
-     * Set the next pointer of the current 
-     * pointer to null pointer.
-     */
-    ptr->next_idx = 0;
+
+  v_pointer_object *base_ptr = ptr_table->base_ptr;
+
+  u32 prior_idx = ptr->prior_idx;
+  u32 next_idx = ptr->next_idx;
+
+  v_pointer_object *next_ptr = base_ptr + next_idx;
+
+  if (prior_idx != 0) {
+    (base_ptr + prior_idx)->prior_idx = next_idx;
+  } else {
+    ptr_table->start_ptr = next_ptr;
   }
+
+  if (next_idx != 0) {
+    next_ptr->prior_idx = prior_idx;
+  }
+
+  v_pointer_object *end_ptr = ptr_table->end_ptr;
+  end_ptr->next_idx = ptr - base_ptr;
+  ptr->prior_idx = end_ptr - base_ptr;
+  ptr_table->end_ptr = ptr;
+  ptr->next_idx = 0;
 
   return V_ERR_NONE;
 }

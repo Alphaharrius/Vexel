@@ -7,6 +7,7 @@
  * This file defines the interface of the 
  * Vexel Heap implementation.
  */
+
 #include "v-type.h"
 #include "v-error.h"
 
@@ -140,6 +141,26 @@ v_err v_heap_reallocate(v_pointer_object *ptr, u64 size);
  * @return: The status of the operation.
  */
 v_err v_heap_free(v_pointer_object *ptr);
+
+/**
+ * This method is a safe check if a pointer is null. 
+ * There are two cases which this is valid, first is 
+ * if the pointer points to the global null reference 
+ * (The base pointer); or the pointer's address is NULL, 
+ * which is highly unlikely but probable via external 
+ * native plugins or within development builds.
+ * @param: The pointer to be checked.
+ * @return: Boolean value of the checking.
+ */
+static inline u8 
+is_null_pointer(v_pointer_object *ptr)
+{
+  if (ptr == V_PTR(v_heap.base_addr) || !ptr->mem_addr) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
 
 typedef enum {
 
