@@ -37,6 +37,11 @@ typedef struct {
  */
 #define V_PTR(addr) ((v_pointer_object *) (addr))
 
+/**
+ * A macro for retrieving the global null pointer.
+ */
+#define V_NULL_PTR V_PTR(v_heap.base_addr)
+
 struct v_heap_object {
   /**
    * The starting address of the 
