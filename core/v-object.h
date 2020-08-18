@@ -26,19 +26,19 @@
 
 #define OBJ_MAP OBJ_TYPE_MAP
 
-#define PROP_TYPE(addr) (u8 *) addr
+#define V_OBTYPE(addr) (u8 *) addr
 
 #define MASK_NOT_DAT  0xE0
 #define MASK_NOT_LST  0xD0
 #define MASK_NOT_MAP  0xB0
 
 #define NOT_TYPE_DAT(addr) \
-  MASK_NOT_DAT & *PROP_TYPE(addr)
+  MASK_NOT_DAT & *V_OBTYPE(addr)
 
 #define NOT_TYPE_LST(addr) \
-  MASK_NOT_LST & *PROP_TYPE(addr)
+  MASK_NOT_LST & *V_OBTYPE(addr)
 
 #define NOT_TYPE_MAP(addr) \
-  MASK_NOT_MAP & *PROP_TYPE(addr)
+  MASK_NOT_MAP & *V_OBTYPE(addr)
 
 #endif

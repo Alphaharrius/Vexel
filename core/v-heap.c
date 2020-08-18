@@ -102,20 +102,12 @@ v_initialize_heap(u64 heap_size,
 
   v_heap.tot_size = heap_size;
 
-  v_heap.obj_space_size = heap_size - ptr_table_size;
+  v_heap.ob_space_size = heap_size - ptr_table_size;
   
   struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
   ptr_table->base_ptr = V_PTR(heap_addr);
   u32 tot_ptr_cnt = ptr_table_size / sizeof(v_pointer_object);
   ptr_table->top_ptr = ptr_table->base_ptr + tot_ptr_cnt - 1;
-
-  /**
-   * As there are no allocation just after 
-   * the initialization, init both start 
-   * and end pointer as NULL.
-   */
-  ptr_table->start_ptr = NULL;
-  ptr_table->end_ptr = NULL;
 
   /**
    * Initialize the pointer table bytes to value zero as:
@@ -139,7 +131,7 @@ v_heap_allocate(v_pointer_object **ptr, u64 size)
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
-  if (size > v_heap.obj_space_size) {
+  if (size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
@@ -171,40 +163,6 @@ v_heap_allocate(v_pointer_object **ptr, u64 size)
   }
 
   /**
-   * If the end pointer of the table 
-   * linked list is NULL, this must 
-   * be the first allocation of the 
-   * heap pool.
-   */
-  if (!ptr_table->end_ptr) {
-    ptr_table->start_ptr = p;
-    ptr_table->end_ptr = p;
-  } 
-  /**
-   * Else link the current pointer idx 
-   * to the end of the linked list.
-   */
-  else {
-    /**
-     * Set the next index of the current 
-     * end pointer to this pointer.
-     */
-    ptr_table->end_ptr->next_idx = 
-        p - ptr_table->base_ptr;
-    /**
-     * Set the prior index of this pointer 
-     * to the current end pointer.
-     */
-    p->prior_idx = 
-        ptr_table->end_ptr - ptr_table->base_ptr;
-    /**
-     * Set the current pointer to 
-     * the end of the linked list.
-     */
-    ptr_table->end_ptr = p;
-  }
-
-  /**
    * The allocator does not care about any unused 
    * holes before the allocation offset.
    */
@@ -228,7 +186,7 @@ v_heap_reallocate(v_pointer_object *ptr, u64 size)
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
-  if (size > v_heap.obj_space_size) {
+  if (size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
@@ -256,117 +214,14 @@ v_heap_reallocate(v_pointer_object *ptr, u64 size)
     memcpy(ptr->mem_addr, prior_addr, size);
   }
 
-  /**
-   * To make the rearranging algorithm works, the pointer 
-   * linked list must be updated, which the reallocated 
-   * pointer must be moved to the end so the ordering or 
-   * the allocation will be single directioned.
-   */
-  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-
-  v_pointer_object *base_ptr = ptr_table->base_ptr;
-
-  u32 prior_idx = ptr->prior_idx;
-  u32 next_idx = ptr->next_idx;
-
-  v_pointer_object *next_ptr = base_ptr + next_idx;
-
-  if (prior_idx != 0) {
-    (base_ptr + prior_idx)->prior_idx = next_idx;
-  } else {
-    ptr_table->start_ptr = next_ptr;
-  }
-
-  if (next_idx != 0) {
-    next_ptr->prior_idx = prior_idx;
-  }
-
-  v_pointer_object *end_ptr = ptr_table->end_ptr;
-  end_ptr->next_idx = ptr - base_ptr;
-  ptr->prior_idx = end_ptr - base_ptr;
-  ptr_table->end_ptr = ptr;
-  ptr->next_idx = 0;
-
   return V_ERR_NONE;
 }
 
-v_err 
-v_heap_free(v_pointer_object *ptr) 
+u8 v_is_null(v_pointer_object *ptr)
 {
-  /**
-   * Freeing null pointer is not allowed.
-   */
-  if (!ptr->mem_addr) {
-    return V_ERR_OBJ_NULL;
+  if (ptr == V_PTR(v_heap.base_addr) || !ptr->mem_addr) {
+    return TRUE;
   }
 
-  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-  /**
-   * The freeing of pointer is just 
-   * removing it from the linked list.
-   * If the prior and the end index are 
-   * both zero, this is the only pointer 
-   * in the linked list.
-   */
-  v_pointer_object *link_ptr;
-  if (ptr->prior_idx & ptr->next_idx == 0) {
-    ptr_table->start_ptr = NULL;
-    ptr_table->end_ptr = NULL;
-  }
-  /**
-   * If the prior index is 0, this 
-   * pointer must be the start of 
-   * the linked list.
-   */
-  else if (ptr->prior_idx == 0) {
-    link_ptr = ptr_table->base_ptr + ptr->next_idx;
-    link_ptr->prior_idx = 0;
-    ptr_table->start_ptr = link_ptr;
-  } 
-  /**
-   * If the next index is zero, 
-   * this must be the end of the 
-   * linked list.
-   */
-  else if (ptr->next_idx == 0) {
-    link_ptr = ptr_table->base_ptr + ptr->prior_idx;
-    link_ptr->next_idx = 0;
-    ptr_table->end_ptr = link_ptr;
-  }
-  /**
-   * Else the pointer must be elements 
-   * within the linked list.
-   */
-  else {
-    u32 prior_idx = ptr->prior_idx;
-    u32 next_idx = next_idx;
-    link_ptr = ptr_table->base_ptr + prior_idx;
-    link_ptr->next_idx = next_idx;
-    link_ptr = ptr_table->base_ptr + next_idx;
-    link_ptr->prior_idx = next_idx;
-  }
-
-  return V_ERR_NONE;
-}
-
-v_err 
-v_heap_rearrange(v_heap_rearr_strat strat) 
-{
-  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-  v_pointer_object *ptr = ptr_table->start_ptr;
-
-  if (ptr) {
-    u8 *pos_addr = v_heap.base_addr;
-    while (ptr != ptr_table->base_ptr) {
-      if (ptr->mem_addr != pos_addr) {
-        memcpy(pos_addr, ptr->mem_addr, ptr->size);
-        ptr->mem_addr = pos_addr;
-        pos_addr += ptr->size;
-      }
-      ptr = ptr_table->base_ptr + ptr->next_idx;
-    }
-    v_heap.pos_addr = pos_addr;
-  }
-
-  return V_ERR_NONE;
+  return FALSE;
 }

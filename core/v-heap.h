@@ -29,14 +29,6 @@ typedef struct {
    * the allocated heap memory.
    */
   u64 size;
-  /**
-   * The pointer table is implemented 
-   * as a double linked list, each pointer 
-   * will carry the index to the prior 
-   * and the next pointer.
-   */
-  u32 prior_idx;
-  u32 next_idx;
 
 } v_pointer_object;
 
@@ -70,7 +62,7 @@ struct v_heap_object {
    * The total avaliable byte size 
    * for object allocation.
    */
-  u64 obj_space_size;
+  u64 ob_space_size;
   /**
    * The pointer table for accessing 
    * all allocated chunks.
@@ -92,13 +84,6 @@ struct v_heap_object {
      * The last pointer in the pointer table.
      */
     v_pointer_object *top_ptr;
-    /**
-     * The pointer table will only carry 
-     * reference to the start and the end 
-     * pointer of the Heap Pool.
-     */
-    v_pointer_object *start_ptr;
-    v_pointer_object *end_ptr;
 
   } ptr_table;
   
@@ -152,22 +137,6 @@ v_err v_heap_free(v_pointer_object *ptr);
  * @param: The pointer to be checked.
  * @return: Boolean value of the checking.
  */
-static inline u8 
-is_null_pointer(v_pointer_object *ptr)
-{
-  if (ptr == V_PTR(v_heap.base_addr) || !ptr->mem_addr) {
-    return TRUE;
-  }
-
-  return FALSE;
-}
-
-typedef enum {
-
-  V_HEAP_REARR_FULL
-
-} v_heap_rearr_strat;
-
-v_err v_heap_rearrange(v_heap_rearr_strat strat);
+u8 v_is_null(v_pointer_object *ptr);
 
 #endif

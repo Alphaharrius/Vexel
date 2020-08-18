@@ -11,23 +11,23 @@
 #include "v-error.h"
 #include "v-heap.h"
 
-#define PROP_ESIZE_OFF SIZE_8
-#define PROP_LEN_OFF  PROP_ESIZE_OFF + SIZE_8
-#define PROP_TLEN_OFF PROP_LEN_OFF + SIZE_32
-#define PROP_DPTR_OFF PROP_TLEN_OFF + SIZE_32
-
-#define SIZE_LST_OBJ  PROP_DPTR_OFF
-
 /**
  * TEMPORARY:
  * This will be a variable in the virtual machine.
  */
 #define LST_MAX_LEN (u64) 0x100000000
 
-#define PROP_ESIZE(addr) (u8 *) (addr + PROP_ESIZE_OFF)
-#define PROP_LEN(addr) (u32 *) (addr + PROP_LEN_OFF)
-#define PROP_TLEN(addr) (u32 *) (addr + PROP_TLEN_OFF)
-#define PROP_DPTR(addr) (u8 *) (addr + PROP_DPTR_OFF)
+#define OFF_ELSIZE SIZE_8
+#define OFF_LSTPOS OFF_ELSIZE + SIZE_8
+#define OFF_LSTLEN OFF_LSTPOS + SIZE_32
+#define OFF_LSTDAT OFF_LSTLEN + SIZE_32
+
+#define V_ELSIZE(addr) (u8 *) (addr + OFF_ELSIZE)
+#define V_LSTPOS(addr) (u32 *) (addr + OFF_LSTPOS)
+#define V_LSTLEN(addr) (u32 *) (addr + OFF_LSTLEN)
+#define V_LSTDAT(addr) (u8 *) (addr + OFF_LSTDAT)
+
+#define SIZE_LST_OBJ  OFF_LSTDAT
 
 /**
  * Create and write to an list object.

@@ -5,12 +5,9 @@ print_pointer(v_pointer_object *ptr)
 {
   printf("{\n\tmem_addr : 0x%llx, \
           \n\tsize : 0x%llx, \
-          \n\tprior_idx : %d, \
-          \n\tnext_idx : %d\n}",
+          \n}",
           ptr->mem_addr,
-          ptr->size, 
-          ptr->prior_idx, 
-          ptr->next_idx);
+          ptr->size);
 }
 
 int 
@@ -36,14 +33,10 @@ main()
     }
   }
 
-  v_heap_reallocate(v_heap.ptr_table.start_ptr, 9);
-
-  v_pointer_object *ptr = v_heap.ptr_table.start_ptr;
-  while (ptr->next_idx) {
-    print_pointer(ptr);
-    ptr = v_heap.ptr_table.base_ptr + ptr->next_idx;
+  v_pointer_object *ptr = v_heap.ptr_table.base_ptr;
+  u8 i = 0; while (i < 5) {
+    print_pointer(ptr + i++);
   }
-  print_pointer(ptr);
 
   return 0;
 }

@@ -5,7 +5,7 @@
  * v-list.c
  */
 
-#define LST_TLEN_GROW(tot_len) \
+#define LST_LEN_GROW(tot_len) \
   tot_len = (tot_len << 1) - (tot_len >> 1);
 
 v_err 
@@ -67,28 +67,28 @@ v_make_list_object( v_pointer_object **ptr,
      * value will grow until the 
      * list length is satisfied.
      */
-    LST_TLEN_GROW(tot_len);
+    LST_LEN_GROW(tot_len);
   }
 
   v_err status;
-  u64 obj_size = SIZE_LST_OBJ + el_size * tot_len;
-  if (obj_size > v_heap.obj_space_size) {
+  u64 ob_size = SIZE_LST_OBJ + el_size * tot_len;
+  if (ob_size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
-  status = v_heap_allocate(ptr, obj_size);
+  status = v_heap_allocate(ptr, ob_size);
   if (status != V_ERR_NONE) {
     return status;
   }
 
-  u8 *obj_addr = (*ptr)->mem_addr;
-  *PROP_TYPE(obj_addr) = type;
-  *PROP_ESIZE(obj_addr) = el_size;
-  *PROP_LEN(obj_addr) = len;
-  *PROP_TLEN(obj_addr) = tot_len;
+  u8 *ob_addr = (*ptr)->mem_addr;
+  *V_OBTYPE(ob_addr) = type;
+  *V_ELSIZE(ob_addr) = el_size;
+  *V_LSTPOS(ob_addr) = len;
+  *V_LSTLEN(ob_addr) = tot_len;
 
   if (len && dptr) {
-    memcpy(PROP_DPTR(obj_addr), dptr, el_size * len);
+    memcpy(V_LSTDAT(ob_addr), dptr, el_size * len);
   }
 
   return status;
@@ -102,7 +102,7 @@ v_list_expand(v_pointer_object *lst_ptr,
    * Check if the list pointer is the global null 
    * pointer, which takes the base position.
    */
-  if (is_null_pointer(lst_ptr)) {
+  if (v_is_null(lst_ptr)) {
     return V_ERR_OBJ_NULL;
   }
 
@@ -114,13 +114,13 @@ v_list_expand(v_pointer_object *lst_ptr,
     return V_ERR_OBJ_NOT_LST;
   }
 
-  u8 el_size = *PROP_ESIZE(lst_addr);
+  u8 el_size = *V_ELSIZE(lst_addr);
 
   /**
    * Using pointer for better handling.
    */
-  u32 *len = PROP_LEN(lst_addr);
-  u32 tot_len = *PROP_TLEN(lst_addr);
+  u32 *len = V_LSTPOS(lst_addr);
+  u32 tot_len = *V_LSTLEN(lst_addr);
 
   /**
    * Check if the length is smaller than 
@@ -131,7 +131,7 @@ v_list_expand(v_pointer_object *lst_ptr,
      * Allocate a new memory chunk for the 
      * list with extra allocated length.
      */
-    LST_TLEN_GROW(tot_len);
+    LST_LEN_GROW(tot_len);
     u64 new_size = SIZE_LST_OBJ + tot_len * el_size;
     v_err status = v_heap_reallocate(lst_ptr, new_size);
     if (status != V_ERR_NONE) {
@@ -144,18 +144,18 @@ v_list_expand(v_pointer_object *lst_ptr,
      * the location within the 
      * new allocation.
      */
-    len = PROP_LEN(lst_addr);
+    len = V_LSTPOS(lst_addr);
     /**
      * Only the total length requires an update.
      */
-    *PROP_TLEN(lst_addr) = tot_len;
+    *V_LSTLEN(lst_addr) = tot_len;
   }
 
   /**
    * Set the return address to the last 
    * element address of the list.
    */
-  *addr = PROP_DPTR(lst_addr) + (*len)++ * el_size;
+  *addr = V_LSTDAT(lst_addr) + (*len)++ * el_size;
 
   return V_ERR_NONE;
 }
@@ -183,9 +183,9 @@ v_list_push(v_pointer_object *lst_ptr,
             v_pointer_object *ptr)
 {
   u8 *lst_addr = lst_ptr->mem_addr;
-  u8 *obj_addr = ptr->mem_addr;
-  u8 lst_type = *PROP_TYPE(lst_addr);
-  if (!match_type(lst_type, *PROP_TYPE(obj_addr))) {
+  u8 *ob_addr = ptr->mem_addr;
+  u8 lst_type = *V_OBTYPE(lst_addr);
+  if (!match_type(lst_type, *V_OBTYPE(ob_addr))) {
     return V_ERR_OBJ_TYP_UNMATCH;
   }
 
@@ -200,7 +200,7 @@ v_list_push(v_pointer_object *lst_ptr,
 
     case OBJ_LST_INT:
     case OBJ_LST_FLT: 
-    *(u64 *) psh_addr = *PROP_DAT(obj_addr); 
+    *(u64 *) psh_addr = *V_DAT(ob_addr); 
     break;
 
     case OBJ_LST_PTR:
@@ -220,9 +220,11 @@ v_err
 v_list_pop( v_pointer_object *lst_ptr, 
             v_pointer_object **ptr) 
 {
-  if (is_null_pointer(lst_ptr)) {
+  if (v_is_null(lst_ptr)) {
     return V_ERR_OBJ_NULL;
   }
 
 
 }
+
+#undef LST_LEN_GROW
