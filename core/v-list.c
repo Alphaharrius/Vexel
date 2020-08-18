@@ -35,21 +35,21 @@ v_make_list_object( v_pointer_object **ptr,
     /**
      * Size of char and byte type are 1.
      */
-    case OBJ_LST_STR:
-    case OBJ_LST_OPC: el_size = SIZE_8; break;
+    case OB_LST_CHR:
+    case OB_LST_BYT: el_size = SIZE_8; break;
     /**
      * Size of pointer, int and float type are 8.
      */
-    case OBJ_LST_PTR:
-    case OBJ_LST_INT:
-    case OBJ_LST_FLT: el_size = SIZE_64; break;
+    case OB_LST_PTR:
+    case OB_LST_INT:
+    case OB_LST_FLT: el_size = SIZE_64; break;
     /**
      * Types out of the scope of list type 
      * will be rejected, this checking is 
      * for debug purpose only as the compiler 
      * will not generate invalid types.
      */
-    default: return V_ERR_API_INV_PARAM;
+    default: return V_ERR_API_INV_CALL;
   }
 
   /**
@@ -68,7 +68,7 @@ v_make_list_object( v_pointer_object **ptr,
   }
 
   v_err status;
-  u64 ob_size = SIZE_LST_OBJ + el_size * tot_len;
+  u64 ob_size = SIZE_LST_OB + el_size * tot_len;
   if (ob_size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
@@ -100,7 +100,7 @@ v_list_expand(v_pointer_object *lst_ptr,
    * pointer, which takes the base position.
    */
   if (v_is_null(lst_ptr)) {
-    return V_ERR_OBJ_NULL;
+    return V_ERR_OB_NULL;
   }
 
   u8 *lst_addr = lst_ptr->mem_addr;
@@ -108,7 +108,7 @@ v_list_expand(v_pointer_object *lst_ptr,
    * Check if the pointer is type of list.
    */
   if (!V_IS_LST(lst_addr)) {
-    return V_ERR_OBJ_NOT_LST;
+    return V_ERR_OB_NOT_LST;
   }
 
   u8 el_size = *V_EL_SIZE(lst_addr);
@@ -129,7 +129,8 @@ v_list_expand(v_pointer_object *lst_ptr,
      * list with extra allocated length.
      */
     LST_LEN_GROW(tot_len);
-    u64 new_size = SIZE_LST_OBJ + tot_len * el_size;
+    u64 new_size = SIZE_LST_OB + tot_len * el_size;
+
     v_err status = v_heap_reallocate(lst_ptr, new_size);
     if (status != V_ERR_NONE) {
       return status;
@@ -158,18 +159,15 @@ v_list_expand(v_pointer_object *lst_ptr,
 }
 
 static inline u8 
-match_type(u8 lst_type, u8 type)
+match_list_type(u8 lst_type, u8 type)
 {
   switch (lst_type) {
 
-    case OBJ_LST_INT: return type == OBJ_INT;
+    case OB_LST_INT: return type == OB_INT;
+    case OB_LST_FLT: return type == OB_FLT;
+    case OB_LST_BYT:
+    case OB_LST_CHR: return type == OB_CHR;
 
-    case OBJ_LST_FLT: return type == OBJ_FLT;
-
-    case OBJ_LST_PTR: return TRUE;
-
-    case OBJ_LST_STR:
-    case OBJ_LST_OPC:
     default: return FALSE;
 
   }
@@ -179,11 +177,16 @@ v_err
 v_list_push(v_pointer_object *lst_ptr, 
             v_pointer_object *ptr)
 {
+  /**
+   * Validate the element type to be pushed to 
+   * the list, this could be replaced by a pre 
+   * check instruction in later builds.
+   */
   u8 *lst_addr = lst_ptr->mem_addr;
   u8 *ob_addr = ptr->mem_addr;
   u8 lst_type = *V_TYPE(lst_addr);
-  if (!match_type(lst_type, *V_TYPE(ob_addr))) {
-    return V_ERR_OBJ_TYP_UNMATCH;
+  if (!match_list_type(lst_type, *V_TYPE(ob_addr))) {
+    return V_ERR_OB_TYP_UNMATCH;
   }
 
   v_err status;
@@ -194,19 +197,17 @@ v_list_push(v_pointer_object *lst_ptr,
   }
 
   switch (lst_type) {
-
-    case OBJ_LST_INT:
-    case OBJ_LST_FLT: 
-    *(u64 *) psh_addr = *V_DAT(ob_addr); 
+    case OB_LST_BYT:
+    case OB_LST_CHR:
+    *psh_addr = *V_BDAT(ob_addr);
     break;
 
-    case OBJ_LST_PTR:
-    *(u64 *) psh_addr = (u64) ptr;
+    case OB_LST_INT:
+    case OB_LST_FLT:
+    *V_QPTR(psh_addr) = *V_QDAT(ob_addr);
     break;
 
-    default:
-    break;
-
+    default: break;
   }
 
   return status;
@@ -217,10 +218,45 @@ v_list_pop( v_pointer_object *lst_ptr,
             v_pointer_object **ptr) 
 {
   if (v_is_null(lst_ptr)) {
-    return V_ERR_OBJ_NULL;
+    return V_ERR_OB_NULL;
   }
 
+  u8 *ob_addr = lst_ptr->mem_addr;
 
+  if (!V_IS_LST(ob_addr)) {
+    return V_ERR_OB_NOT_LST;
+  }
+
+  if (*V_LST_POS(ob_addr) == 0) {
+    *ptr = V_NULL_PTR;
+  }
+  
+  u32 new_len = -- *V_LST_POS(ob_addr);
+
+  u8 type;
+  u64 dat;
+  switch (*V_TYPE(ob_addr)) {
+
+    case OB_LST_BYT:
+    case OB_LST_CHR:
+    type = OB_CHR;
+    *V_BPTR(&dat) = *(ob_addr + new_len);
+    break;
+
+    case OB_LST_INT:
+    type = OB_INT;
+    dat = *(V_LST_QDAT(ob_addr) + new_len);
+    break;
+
+    case OB_LST_FLT:
+    type = OB_FLT;
+    dat = *(V_LST_QDAT(ob_addr) + new_len);
+    break;
+
+    default: break;
+  }
+
+  return v_make_data_object(*ptr, type, dat);
 }
 
 #undef LST_LEN_GROW

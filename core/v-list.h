@@ -30,7 +30,7 @@
 #define V_LST_DDAT(addr) V_DPTR(addr + OFF_LST_DAT)
 #define V_LST_QDAT(addr) V_QPTR(addr + OFF_LST_DAT)
 
-#define SIZE_LST_OBJ  OFF_LST_DAT
+#define SIZE_LST_OB  OFF_LST_DAT
 
 /**
  * Create and write to an list object.
@@ -60,15 +60,22 @@ v_err
 v_list_expand(v_pointer_object *lst_ptr, u8 **addr);
 
 /**
- * Push a new element to the list, the extra case 
- * of pointer lists (arrays) is incorporated into 
- * this method.
- * @param lst_ptr: The list pointer to be expanded.
+ * Push a new element to a list (static typed array), 
+ * which includes byte (string), integer and float array.
+ * @param lst_ptr: The target list pointer.
  * @param ptr: The element pointer to be pushed.
+ * @return: Status of the operation.
  */
 v_err 
 v_list_push(v_pointer_object *lst_ptr, v_pointer_object *ptr);
 
+/**
+ * Pop an element from a list (static typed array), 
+ * which includes byte (string), integer and float array. 
+ * Create a new object to store the popped element.
+ * @param lst_ptr: The target list pointer.
+ * @return: Status of the operation.
+ */
 v_err 
 v_list_pop(v_pointer_object *lst_ptr, v_pointer_object **ptr);
 
