@@ -14,7 +14,7 @@
 
 #define OFF_DAT SIZE_8
 
-#define V_DAT(addr) (u64 *) (addr + OFF_DAT)
+#define V_DAT(addr) V_QPTR(addr + OFF_DAT)
 
 v_err 
 v_make_data_object( v_pointer_object **ptr, 

@@ -5,7 +5,7 @@ print_pointer(v_pointer_object *ptr)
 {
   printf("{\n\tmem_addr : 0x%llx, \
           \n\tsize : 0x%llx, \
-          \n}",
+          \n}\n",
           ptr->mem_addr,
           ptr->size);
 }
@@ -37,6 +37,8 @@ main()
   u8 i = 0; while (i < 5) {
     print_pointer(ptr + i++);
   }
+
+  printf("%llx\n", *V_LST_QDAT(list->mem_addr));
 
   return 0;
 }

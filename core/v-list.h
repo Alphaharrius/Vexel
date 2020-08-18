@@ -17,17 +17,20 @@
  */
 #define LST_MAX_LEN (u64) 0x100000000
 
-#define OFF_ELSIZE SIZE_8
-#define OFF_LSTPOS OFF_ELSIZE + SIZE_8
-#define OFF_LSTLEN OFF_LSTPOS + SIZE_32
-#define OFF_LSTDAT OFF_LSTLEN + SIZE_32
+#define OFF_EL_SIZE SIZE_8
+#define OFF_LST_POS OFF_EL_SIZE + SIZE_8
+#define OFF_LST_LEN OFF_LST_POS + SIZE_32
+#define OFF_LST_DAT OFF_LST_LEN + SIZE_32
 
-#define V_ELSIZE(addr) (u8 *) (addr + OFF_ELSIZE)
-#define V_LSTPOS(addr) (u32 *) (addr + OFF_LSTPOS)
-#define V_LSTLEN(addr) (u32 *) (addr + OFF_LSTLEN)
-#define V_LSTDAT(addr) (u8 *) (addr + OFF_LSTDAT)
+#define V_EL_SIZE(addr) V_BPTR(addr + OFF_EL_SIZE)
+#define V_LST_POS(addr) V_DPTR(addr + OFF_LST_POS)
+#define V_LST_LEN(addr) V_DPTR(addr + OFF_LST_LEN)
+#define V_LST_BDAT(addr) V_BPTR(addr + OFF_LST_DAT)
+#define V_LST_WDAT(addr) V_WPTR(addr + OFF_LST_DAT)
+#define V_LST_DDAT(addr) V_DPTR(addr + OFF_LST_DAT)
+#define V_LST_QDAT(addr) V_QPTR(addr + OFF_LST_DAT)
 
-#define SIZE_LST_OBJ  OFF_LSTDAT
+#define SIZE_LST_OBJ  OFF_LST_DAT
 
 /**
  * Create and write to an list object.

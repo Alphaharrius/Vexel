@@ -38,12 +38,9 @@ v_make_list_object( v_pointer_object **ptr,
     case OBJ_LST_STR:
     case OBJ_LST_OPC: el_size = SIZE_8; break;
     /**
-     * Size of pointer index is 4.
+     * Size of pointer, int and float type are 8.
      */
-    case OBJ_LST_PTR: el_size = SIZE_32; break;
-    /**
-     * Size of int and float type are 8.
-     */
+    case OBJ_LST_PTR:
     case OBJ_LST_INT:
     case OBJ_LST_FLT: el_size = SIZE_64; break;
     /**
@@ -82,13 +79,13 @@ v_make_list_object( v_pointer_object **ptr,
   }
 
   u8 *ob_addr = (*ptr)->mem_addr;
-  *V_OBTYPE(ob_addr) = type;
-  *V_ELSIZE(ob_addr) = el_size;
-  *V_LSTPOS(ob_addr) = len;
-  *V_LSTLEN(ob_addr) = tot_len;
+  *V_TYPE(ob_addr) = type;
+  *V_EL_SIZE(ob_addr) = el_size;
+  *V_LST_POS(ob_addr) = len;
+  *V_LST_LEN(ob_addr) = tot_len;
 
   if (len && dptr) {
-    memcpy(V_LSTDAT(ob_addr), dptr, el_size * len);
+    memcpy(V_LST_BDAT(ob_addr), dptr, el_size * len);
   }
 
   return status;
@@ -110,17 +107,17 @@ v_list_expand(v_pointer_object *lst_ptr,
   /**
    * Check if the pointer is type of list.
    */
-  if (NOT_TYPE_LST(lst_addr)) {
+  if (!V_IS_LST(lst_addr)) {
     return V_ERR_OBJ_NOT_LST;
   }
 
-  u8 el_size = *V_ELSIZE(lst_addr);
+  u8 el_size = *V_EL_SIZE(lst_addr);
 
   /**
    * Using pointer for better handling.
    */
-  u32 *len = V_LSTPOS(lst_addr);
-  u32 tot_len = *V_LSTLEN(lst_addr);
+  u32 *len = V_LST_POS(lst_addr);
+  u32 tot_len = *V_LST_LEN(lst_addr);
 
   /**
    * Check if the length is smaller than 
@@ -144,18 +141,18 @@ v_list_expand(v_pointer_object *lst_ptr,
      * the location within the 
      * new allocation.
      */
-    len = V_LSTPOS(lst_addr);
+    len = V_LST_POS(lst_addr);
     /**
      * Only the total length requires an update.
      */
-    *V_LSTLEN(lst_addr) = tot_len;
+    *V_LST_LEN(lst_addr) = tot_len;
   }
 
   /**
    * Set the return address to the last 
    * element address of the list.
    */
-  *addr = V_LSTDAT(lst_addr) + (*len)++ * el_size;
+  *addr = V_LST_BDAT(lst_addr) + (*len)++ * el_size;
 
   return V_ERR_NONE;
 }
@@ -184,8 +181,8 @@ v_list_push(v_pointer_object *lst_ptr,
 {
   u8 *lst_addr = lst_ptr->mem_addr;
   u8 *ob_addr = ptr->mem_addr;
-  u8 lst_type = *V_OBTYPE(lst_addr);
-  if (!match_type(lst_type, *V_OBTYPE(ob_addr))) {
+  u8 lst_type = *V_TYPE(lst_addr);
+  if (!match_type(lst_type, *V_TYPE(ob_addr))) {
     return V_ERR_OBJ_TYP_UNMATCH;
   }
 
@@ -204,8 +201,7 @@ v_list_push(v_pointer_object *lst_ptr,
     break;
 
     case OBJ_LST_PTR:
-    *(u32 *) 
-    psh_addr = ptr - v_heap.ptr_table.base_ptr;
+    *(u64 *) psh_addr = (u64) ptr;
     break;
 
     default:

@@ -17,7 +17,7 @@ v_make_data_object( v_pointer_object **ptr,
   }
 
   u8 * addr = (*ptr)->mem_addr;
-  *V_OBTYPE(addr) = type;
+  *V_TYPE(addr) = type;
   *V_DAT(addr) = dat;
 
   return stat;

@@ -26,19 +26,24 @@
 
 #define OBJ_MAP OBJ_TYPE_MAP
 
-#define V_OBTYPE(addr) (u8 *) addr
+#define V_BPTR(addr) (u8 *) (addr)
+#define V_WPTR(addr) (u16 *) (addr)
+#define V_DPTR(addr) (u32 *) (addr)
+#define V_QPTR(addr) (u64 *) (addr)
+
+#define V_TYPE(addr) V_BPTR(addr)
 
 #define MASK_NOT_DAT  0xE0
 #define MASK_NOT_LST  0xD0
 #define MASK_NOT_MAP  0xB0
 
-#define NOT_TYPE_DAT(addr) \
-  MASK_NOT_DAT & *V_OBTYPE(addr)
+#define V_IS_DAT(addr) \
+  !(MASK_NOT_DAT & *V_TYPE(addr))
 
-#define NOT_TYPE_LST(addr) \
-  MASK_NOT_LST & *V_OBTYPE(addr)
+#define V_IS_LST(addr) \
+  !(MASK_NOT_LST & *V_TYPE(addr))
 
-#define NOT_TYPE_MAP(addr) \
-  MASK_NOT_MAP & *V_OBTYPE(addr)
+#define V_IS_MAP(addr) \
+  !(MASK_NOT_MAP & *V_TYPE(addr))
 
 #endif
