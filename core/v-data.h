@@ -10,11 +10,14 @@
 #include "v-error.h"
 #include "v-heap.h"
 
-#define SIZE_DAT_OBJ  0x09
-
 #define OFF_DAT SIZE_8
 
-#define V_DAT(addr) V_QPTR(addr + OFF_DAT)
+#define SIZE_DAT_OB OFF_DAT + SIZE_64
+
+#define V_BDAT(addr) V_BPTR(addr + OFF_DAT)
+#define V_WDAT(addr) V_WPTR(addr + OFF_DAT)
+#define V_DDAT(addr) V_DPTR(addr + OFF_DAT)
+#define V_QDAT(addr) V_QPTR(addr + OFF_DAT)
 
 v_err 
 v_make_data_object( v_pointer_object **ptr, 
