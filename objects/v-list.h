@@ -7,9 +7,9 @@
  * v-list.h
  */
 
-#include "v-type.h"
-#include "v-error.h"
-#include "v-heap.h"
+#include "../core/v-type.h"
+#include "../core/v-error.h"
+#include "../core/v-heap.h"
 
 /**
  * TEMPORARY:
@@ -80,7 +80,7 @@ v_err
 v_list_pop(v_pointer_object *lst_ptr, v_pointer_object **ptr);
 
 v_err 
-v_list_concatenate(v_pointer_object *lst_ptr_a, v_pointer_object *lst_ptr_b);
+v_list_concatenate(v_pointer_object **ob, v_pointer_object *ob_a, v_pointer_object *ob_b);
 
 v_err 
 v_list_unshift(v_pointer_object *lst_ptr, v_pointer_object *ptr);

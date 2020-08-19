@@ -1,4 +1,4 @@
-#include "Vexel.h"
+#include "../core/Vexel.h"
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
@@ -35,7 +35,7 @@ v_make_data_object( v_pointer_object **ptr,
     case OB_NAT:
     *V_QDAT(addr) = dat;
 
-    default:
+    default: break;
   }
 
   return stat;

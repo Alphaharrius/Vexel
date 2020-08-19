@@ -26,16 +26,32 @@
  * FIX: The use of mutexs can use to lock specific 
  * operations for a single thread.
  * 
- * PROBLEM: The linked list algorithm to sort out 
- * the heap order might induce significant overhead 
- * in normal allocation and reallocations.
- * The linked list will also induces large memory 
- * overhead within the heap object space.
+ * PROBLEM: The current allocation algorithm might be 
+ * fast and accurate, but it will accumulates the usage 
+ * of the heap until full loaded. The resulting effect 
+ * is rapid call to garbage collection process which 
+ * slows down the vm periodically.
  * 
- * FIX: Remove the linked list implementation and 
- * use dual pivot quick sort by the address to 
- * sort the heap ordering.
- * 
+ * FIX: Proposal of a new algorithm for memory allocation 
+ * and collection, which consist of the sectored chunks as 
+ * mentioned above, with a free-and-reserve approach in 
+ * allocation of new objects.
+ *  1.  Allocate new objects with the incremental-offset 
+ *      approach until the top of the chunk is reached.
+ *  2.  New allocations targeting a full chunk will be 
+ *      redirected to other free chunks.
+ *  3.  Perform a mark process on the accessed full chunk 
+ *      to mark all unused pointers with allocated memory 
+ *      chunks as reserved pointers.
+ *  4.  Next object allocation targeting the marked chunk 
+ *      will search for reserved pointers, if the allocated 
+ *      memory size of the reserved pointer fits the new 
+ *      size, the reserved pointer will be used for the 
+ *      new allocation.
+ *  5.  If step (4) failed to find any reserved pointers, 
+ *      the allocation will be redirected, and the vm will 
+ *      perform a full mark-sweep-compact garbage collection 
+ *      on the memory chunk.
  */
 
 static inline void *

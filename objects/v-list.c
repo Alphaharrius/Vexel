@@ -1,4 +1,4 @@
-#include "Vexel.h"
+#include "../core/Vexel.h"
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
@@ -69,11 +69,13 @@ v_make_list_object( v_pointer_object **ptr,
 
   v_err status;
   u64 ob_size = SIZE_LST_OB + el_size * tot_len;
+
   if (ob_size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
   status = v_heap_allocate(ptr, ob_size);
+
   if (status != V_ERR_NONE) {
     return status;
   }
@@ -185,6 +187,12 @@ v_list_push(v_pointer_object *lst_ptr,
   u8 *lst_addr = lst_ptr->mem_addr;
   u8 *ob_addr = ptr->mem_addr;
   u8 lst_type = *V_TYPE(lst_addr);
+
+  /**
+   * As this is a static list, elements 
+   * being pushed must be of same element 
+   * type as the list.
+   */
   if (!match_list_type(lst_type, *V_TYPE(ob_addr))) {
     return V_ERR_OB_TYP_UNMATCH;
   }
@@ -192,11 +200,13 @@ v_list_push(v_pointer_object *lst_ptr,
   v_err status;
   u8 *psh_addr;
   status = v_list_expand(lst_ptr, &psh_addr);
+
   if (status != V_ERR_NONE) {
     return status;
   }
 
   switch (lst_type) {
+
     case OB_LST_BYT:
     case OB_LST_CHR:
     *psh_addr = *V_BDAT(ob_addr);
@@ -208,55 +218,121 @@ v_list_push(v_pointer_object *lst_ptr,
     break;
 
     default: break;
+
   }
 
   return status;
 }
 
 v_err 
-v_list_pop( v_pointer_object *lst_ptr, 
-            v_pointer_object **ptr) 
+v_list_pop( v_pointer_object *lst, 
+            v_pointer_object **ob) 
 {
-  if (v_is_null(lst_ptr)) {
+  if (v_is_null(lst)) {
     return V_ERR_OB_NULL;
   }
 
-  u8 *ob_addr = lst_ptr->mem_addr;
+  u8 *lst_addr = lst->mem_addr;
 
-  if (!V_IS_LST(ob_addr)) {
+  if (!V_IS_LST(lst_addr)) {
     return V_ERR_OB_NOT_LST;
   }
 
-  if (*V_LST_POS(ob_addr) == 0) {
-    *ptr = V_NULL_PTR;
+  if (*V_LST_POS(lst_addr) == 0) {
+    *ob = V_NULL_PTR;
   }
   
-  u32 new_len = -- *V_LST_POS(ob_addr);
+  u32 new_len = -- *V_LST_POS(lst_addr);
 
   u8 type;
   u64 dat;
-  switch (*V_TYPE(ob_addr)) {
+  switch (*V_TYPE(lst_addr)) {
 
     case OB_LST_BYT:
     case OB_LST_CHR:
     type = OB_CHR;
-    *V_BPTR(&dat) = *(ob_addr + new_len);
+    *V_BPTR(&dat) = *(lst_addr + new_len);
     break;
 
     case OB_LST_INT:
     type = OB_INT;
-    dat = *(V_LST_QDAT(ob_addr) + new_len);
+    dat = *(V_LST_QDAT(lst_addr) + new_len);
     break;
 
     case OB_LST_FLT:
     type = OB_FLT;
-    dat = *(V_LST_QDAT(ob_addr) + new_len);
+    dat = *(V_LST_QDAT(lst_addr) + new_len);
     break;
 
     default: break;
   }
 
-  return v_make_data_object(*ptr, type, dat);
+  return v_make_data_object(ob, type, dat);
+}
+
+v_err 
+v_list_concatenate( v_pointer_object **ob, 
+                    v_pointer_object *ob_a, 
+                    v_pointer_object *ob_b)
+{
+  if (v_is_null(ob_a) || 
+      v_is_null(ob_b)) {
+
+    return V_ERR_OB_NULL;
+  }
+
+  u8 *a_addr = ob_a->mem_addr;
+  u8 *b_addr = ob_b->mem_addr;
+
+  u8 a_type = *V_TYPE(a_addr);
+  if (!V_IS_LST(a_addr) || !V_IS_LST(b_addr) || 
+      a_type != *V_TYPE(b_addr)) {
+
+    return V_ERR_API_INV_CALL;
+  }
+
+  v_err status;
+  u32 a_len = *V_LST_POS(a_addr);
+  u32 b_len = *V_LST_POS(b_addr);
+
+  if (*V_LST_POS(a_addr) == 0) {
+    status = v_heap_allocate(ob, *V_LST_LEN(b_addr));
+
+    if (status == V_ERR_NONE) {
+      memcpy((*ob)->mem_addr, b_addr, b_len);
+    }
+
+    return status;
+  }
+
+  if (*V_LST_POS(b_addr) == 0) {
+    status = v_heap_allocate(ob, *V_LST_LEN(a_addr));
+
+    if (status == V_ERR_NONE) {
+      memcpy((*ob)->mem_addr, a_addr, a_len);
+    }
+
+    return status;
+  }
+
+  status = v_make_list_object(ob, a_type, a_len + b_len, NULL);
+  if (status != V_ERR_NONE) {
+    return status;
+  }
+
+  u8 *ob_addr = (*ob)->mem_addr;
+  u8 el_size = *V_EL_SIZE(a_addr);
+  u64 a_size = a_len * el_size;
+
+  memcpy( V_LST_BDAT(ob_addr), 
+          V_LST_BDAT(a_addr), 
+          a_size);
+
+  memcpy( V_LST_BDAT(ob_addr) + a_size, 
+          V_LST_BDAT(b_addr), 
+          b_len * el_size);
+
+  return status;
 }
 
 #undef LST_LEN_GROW

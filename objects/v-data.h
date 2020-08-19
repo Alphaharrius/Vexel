@@ -6,9 +6,9 @@
  * v-data.h
  */
 
-#include "v-type.h"
-#include "v-error.h"
-#include "v-heap.h"
+#include "../core/v-type.h"
+#include "../core/v-error.h"
+#include "../core/v-heap.h"
 
 #define OFF_DAT SIZE_8
 

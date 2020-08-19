@@ -7,7 +7,7 @@
  * v-object.h
  */
 
-#include "v-type.h"
+#include "../core/v-type.h"
 
 #define OB_TYPE_DAT  0x10
 #define OB_TYPE_LST  0x20

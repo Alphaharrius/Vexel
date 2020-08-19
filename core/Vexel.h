@@ -13,8 +13,8 @@
 #include "v-error.h"
 #include "v-heap.h"
 
-#include "v-object.h"
-#include "v-data.h"
-#include "v-list.h"
+#include "../objects/v-object.h"
+#include "../objects/v-data.h"
+#include "../objects/v-list.h"
 
 #endif
