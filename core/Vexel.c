@@ -16,14 +16,14 @@ main()
   v_initialize_heap(0xf000, 0x2000);
 
   v_pointer_object *list;
-  v_err status = v_make_list_object(&list, OBJ_LST_PTR, 0, NULL);
+  v_err status = v_make_list_object(&list, OB_LST_INT, 0, NULL);
   if (status != V_ERR_NONE) {
     FATAL("failed to allocate list...");
   }
 
   for (u8 i = 0; i < 3; i++) {
     v_pointer_object *elem;
-    status = v_make_data_object(&elem, OBJ_INT, 0x11223344);
+    status = v_make_data_object(&elem, OB_INT, 0x11223344 + i);
     if (status != V_ERR_NONE) {
       FATAL("failed to allocate data...");
     }
@@ -38,7 +38,14 @@ main()
     print_pointer(ptr + i++);
   }
 
-  printf("%llx\n", *V_LST_QDAT(list->mem_addr));
+  v_pointer_object *pop;
+  status = v_list_pop(list, &pop);
+  if (status != V_ERR_NONE) {
+    FATAL("failed to pop data from the list...");
+  }
+
+  print_pointer(pop);
+  printf("popped: %llx\n", *V_QDAT(pop->mem_addr));
 
   return 0;
 }
