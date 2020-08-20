@@ -60,8 +60,7 @@ v_err
 v_list_expand(v_pointer_object *lst_ptr, u8 **addr);
 
 /**
- * Push a new element to a list (static typed array), 
- * which includes byte (string), integer and float array.
+ * Push a new element to a list of any type.
  * @param lst_ptr: The target list pointer.
  * @param ptr: The element pointer to be pushed.
  * @return: Status of the operation.
@@ -70,15 +69,21 @@ v_err
 v_list_push(v_pointer_object *lst_ptr, v_pointer_object *ptr);
 
 /**
- * Pop an element from a list (static typed array), 
- * which includes byte (string), integer and float array. 
- * Create a new object to store the popped element.
+ * Pop an element from a list of any type, create 
+ * a new object to store the popped element.
  * @param lst_ptr: The target list pointer.
  * @return: Status of the operation.
  */
 v_err 
 v_list_pop(v_pointer_object *lst_ptr, v_pointer_object **ptr);
 
+/**
+ * Concatenate two list of same type into a new list.
+ * @param ob: The pointer address of the new list.
+ * @param ob_a: The pointer of the head list.
+ * @param ob_b: The pointer of the tail list.
+ * @return: Status of the operation.
+ */
 v_err 
 v_list_concatenate(v_pointer_object **ob, v_pointer_object *ob_a, v_pointer_object *ob_b);
 

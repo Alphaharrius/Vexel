@@ -3,8 +3,16 @@
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
  * v-list.c
+ * This file implements the list object, list objects represents 
+ * the following types: integer list, float list, pointer list (array), 
+ * byte/char list (strings).
  */
 
+/**
+ * The list size will grow by 1.5 times of 
+ * the original allocated length to reduce 
+ * reallocation on resizing.
+ */
 #define LST_LEN_GROW(tot_len) \
   tot_len = (tot_len << 1) - (tot_len >> 1);
 
@@ -33,10 +41,9 @@ v_make_list_object( v_pointer_object **ptr,
    */
   switch (type) {
     /**
-     * Size of char and byte type are 1.
+     * Size of char type is 1.
      */
-    case OB_LST_CHR:
-    case OB_LST_BYT: el_size = SIZE_8; break;
+    case OB_LST_CHR: el_size = SIZE_8; break;
     /**
      * Size of pointer, int and float type are 8.
      */
@@ -167,8 +174,10 @@ match_list_type(u8 lst_type, u8 type)
 
     case OB_LST_INT: return type == OB_INT;
     case OB_LST_FLT: return type == OB_FLT;
-    case OB_LST_BYT:
+
     case OB_LST_CHR: return type == OB_CHR;
+
+    case OB_LST_PTR: return TRUE;
 
     default: return FALSE;
 
@@ -198,23 +207,42 @@ v_list_push(v_pointer_object *lst_ptr,
   }
 
   v_err status;
-  u8 *psh_addr;
-  status = v_list_expand(lst_ptr, &psh_addr);
-
+  u8 *el_addr;
+  /**
+   * Attempt to expand the list by 1.
+   */
+  status = v_list_expand(lst_ptr, &el_addr);
   if (status != V_ERR_NONE) {
     return status;
   }
 
   switch (lst_type) {
 
-    case OB_LST_BYT:
+    /**
+     * Charactor type have size of 1 byte.
+     */
     case OB_LST_CHR:
-    *psh_addr = *V_BDAT(ob_addr);
+    *el_addr = *V_BDAT(ob_addr);
     break;
 
+    /**
+     * Integer and float type have size of 8 bytes.
+     */
     case OB_LST_INT:
     case OB_LST_FLT:
-    *V_QPTR(psh_addr) = *V_QDAT(ob_addr);
+    *V_QPTR(el_addr) = *V_QDAT(ob_addr);
+    break;
+
+    /**
+     * As pointer list stores pointer, 
+     * there is no need of extracting 
+     * the data from the object to be 
+     * pushed, set the data of the new 
+     * list element to the address of 
+     * the object pointer.
+     */
+    case OB_LST_PTR:
+    *V_QPTR(el_addr) = (u64) ptr;
     break;
 
     default: break;
@@ -242,16 +270,26 @@ v_list_pop( v_pointer_object *lst,
     *ob = V_NULL_PTR;
   }
   
+  /**
+   * The popped element: arr[len - 1],
+   * pre-decrement the array length and 
+   * set it as the new length, which is 
+   * also the popped index.
+   */
   u32 new_len = -- *V_LST_POS(lst_addr);
 
   u8 type;
   u64 dat;
   switch (*V_TYPE(lst_addr)) {
 
-    case OB_LST_BYT:
     case OB_LST_CHR:
     type = OB_CHR;
-    *V_BPTR(&dat) = *(lst_addr + new_len);
+    /**
+     * All data object are stored in a 8 byte memory chunk, 
+     * to prevent being stored as a sign extended byte, 
+     * casting the dat pointer to byte pointer.
+     */
+    *V_BPTR(&dat) = *(V_LST_BDAT(lst_addr) + new_len);
     break;
 
     case OB_LST_INT:
@@ -264,9 +302,24 @@ v_list_pop( v_pointer_object *lst,
     dat = *(V_LST_QDAT(lst_addr) + new_len);
     break;
 
+    case OB_LST_PTR:
+    /**
+     * The 8 byte data stored within the 
+     * popped element is the address of 
+     * pointer, which is also the popped 
+     * pointer, return directly.
+     */
+    *ob = V_PTR(*(V_LST_QDAT(lst_addr) + new_len));
+    return;
+
     default: break;
   }
 
+  /**
+   * For data lists, we have to 
+   * create a new object to store 
+   * the popped element.
+   */
   return v_make_data_object(ob, type, dat);
 }
 
@@ -286,6 +339,11 @@ v_list_concatenate( v_pointer_object **ob,
 
   u8 a_type = *V_TYPE(a_addr);
   if (!V_IS_LST(a_addr) || !V_IS_LST(b_addr) || 
+      /**
+       * The lists to be concatenated must have 
+       * the same type, as different list types 
+       * have different element size.
+       */
       a_type != *V_TYPE(b_addr)) {
 
     return V_ERR_API_INV_CALL;
@@ -295,7 +353,24 @@ v_list_concatenate( v_pointer_object **ob,
   u32 a_len = *V_LST_POS(a_addr);
   u32 b_len = *V_LST_POS(b_addr);
 
-  if (*V_LST_POS(a_addr) == 0) {
+  /**
+   * Handles the case which both lists are empty, 
+   * create a new empty list.
+   */
+  if (!(a_len | b_len)) {
+    return v_make_list_object(ob, a_type, 0, NULL);
+  }
+
+  /**
+   * If A is empty, clone B as the new list.
+   */
+  else if (a_len == 0) {
+    /**
+     * To reduce overhead in cloning process, 
+     * we will just allocate a new object with 
+     * the size of the template object, and 
+     * copy all bytes.
+     */
     status = v_heap_allocate(ob, *V_LST_LEN(b_addr));
 
     if (status == V_ERR_NONE) {
@@ -305,7 +380,10 @@ v_list_concatenate( v_pointer_object **ob,
     return status;
   }
 
-  if (*V_LST_POS(b_addr) == 0) {
+  /**
+   * If B is empty, clone A as the new list.
+   */
+  else if (b_len == 0) {
     status = v_heap_allocate(ob, *V_LST_LEN(a_addr));
 
     if (status == V_ERR_NONE) {
@@ -315,6 +393,11 @@ v_list_concatenate( v_pointer_object **ob,
     return status;
   }
 
+  /**
+   * Create a new list with length of the total length of two lists, 
+   * we must use v_make_list_object to create the list to confine 
+   * standardize the length.
+   */
   status = v_make_list_object(ob, a_type, a_len + b_len, NULL);
   if (status != V_ERR_NONE) {
     return status;
@@ -324,10 +407,19 @@ v_list_concatenate( v_pointer_object **ob,
   u8 el_size = *V_EL_SIZE(a_addr);
   u64 a_size = a_len * el_size;
 
+  /**
+   * Copy the data bytes from A to 
+   * the data head address new list.
+   */
   memcpy( V_LST_BDAT(ob_addr), 
           V_LST_BDAT(a_addr), 
           a_size);
 
+  /**
+   * Copy the data bytes from B to 
+   * the data address offsetted by 
+   * the size of data from A.
+   */
   memcpy( V_LST_BDAT(ob_addr) + a_size, 
           V_LST_BDAT(b_addr), 
           b_len * el_size);
