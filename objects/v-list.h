@@ -34,17 +34,17 @@
 
 /**
  * Create and write to an list object.
- * @param ptr: The pointer object reference used for the allocation.
+ * @param ptr: The object object reference used for the allocation.
  * @param type: The type of the list object, any other types beyond 
  *              the list domain will result in invalid param exception.
  * @param len: The length of the list to be allocated.
  * @return: Status of the operation.
  */
 v_err 
-v_make_list_object( v_pointer_object **ptr, 
+v_make_list_object( v_object **ob, 
                     u8 type, 
                     u32 len, 
-                    u8 *dptr);
+                    u8 *d_ptr);
 
 /**
  * Expand the list length by 1, if the maximum 
@@ -52,45 +52,40 @@ v_make_list_object( v_pointer_object **ptr,
  * extra space will be allocated.
  * Not to be mistaken with v_list_push, the 
  * latter is implemented using this method.
- * @param lst_ptr: The list pointer to be expanded.
+ * @param ob: The list object to be expanded.
  * @param addr: The address of the expanded element.
  * @return: Status of the operation.
  */
 v_err 
-v_list_expand(v_pointer_object *lst_ptr, u8 **addr);
+v_list_expand(v_object *ob, u8 **addr);
 
 /**
  * Push a new element to a list of any type.
- * @param lst_ptr: The target list pointer.
- * @param ptr: The element pointer to be pushed.
+ * @param lst: The target list object.
+ * @param ob: The element object to be pushed.
  * @return: Status of the operation.
  */
 v_err 
-v_list_push(v_pointer_object *lst_ptr, v_pointer_object *ptr);
+v_list_push(v_object *lst, v_object *ob);
 
 /**
  * Pop an element from a list of any type, create 
  * a new object to store the popped element.
- * @param lst_ptr: The target list pointer.
+ * @param lst: The target list object.
+ * @param ob: The element object being popped.
  * @return: Status of the operation.
  */
 v_err 
-v_list_pop(v_pointer_object *lst_ptr, v_pointer_object **ptr);
+v_list_pop(v_object *lst, v_object **ob);
 
 /**
  * Concatenate two list of same type into a new list.
- * @param ob: The pointer address of the new list.
- * @param ob_a: The pointer of the head list.
- * @param ob_b: The pointer of the tail list.
+ * @param ob: The object address of the new list.
+ * @param a_lst: The object of the head list.
+ * @param b_lst: The object of the tail list.
  * @return: Status of the operation.
  */
 v_err 
-v_list_concatenate(v_pointer_object **ob, v_pointer_object *ob_a, v_pointer_object *ob_b);
-
-v_err 
-v_list_unshift(v_pointer_object *lst_ptr, v_pointer_object *ptr);
-
-v_err 
-v_list_shift(v_pointer_object *lst_ptr, v_pointer_object **ptr);
+v_list_concatenate(v_object **ob, v_object *a_lst, v_object *b_lst);
 
 #endif

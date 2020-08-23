@@ -16,5 +16,6 @@
 #include "../objects/v-object.h"
 #include "../objects/v-data.h"
 #include "../objects/v-list.h"
+#include "../objects/v-map.h"
 
 #endif

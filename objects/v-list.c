@@ -17,10 +17,10 @@
   tot_len = (tot_len << 1) - (tot_len >> 1);
 
 v_err 
-v_make_list_object( v_pointer_object **ptr, 
+v_make_list_object( v_object **ob, 
                     u8 type, 
                     u32 len, 
-                    u8 *dptr)
+                    u8 *d_ptr)
 {
   /**
    * TEMPORARY:
@@ -74,45 +74,45 @@ v_make_list_object( v_pointer_object **ptr,
     LST_LEN_GROW(tot_len);
   }
 
-  v_err status;
+  v_err stat;
   u64 ob_size = SIZE_LST_OB + el_size * tot_len;
 
   if (ob_size > v_heap.ob_space_size) {
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
-  status = v_heap_allocate(ptr, ob_size);
+  stat = v_heap_allocate(ob, ob_size);
 
-  if (status != V_ERR_NONE) {
-    return status;
+  if (IS_ERR(stat)) {
+    return stat;
   }
 
-  u8 *ob_addr = (*ptr)->mem_addr;
+  u8 *ob_addr = (*ob)->mem_addr;
   *V_TYPE(ob_addr) = type;
   *V_EL_SIZE(ob_addr) = el_size;
   *V_LST_POS(ob_addr) = len;
   *V_LST_LEN(ob_addr) = tot_len;
 
-  if (len && dptr) {
-    memcpy(V_LST_BDAT(ob_addr), dptr, el_size * len);
+  if (len && d_ptr) {
+    memcpy(V_LST_BDAT(ob_addr), d_ptr, el_size * len);
   }
 
-  return status;
+  return stat;
 }
 
 v_err 
-v_list_expand(v_pointer_object *lst_ptr,
+v_list_expand(v_object *ob,
               u8 **addr)
 {
   /**
    * Check if the list pointer is the global null 
    * pointer, which takes the base position.
    */
-  if (v_is_null(lst_ptr)) {
+  if (v_is_null(ob)) {
     return V_ERR_OB_NULL;
   }
 
-  u8 *lst_addr = lst_ptr->mem_addr;
+  u8 *lst_addr = ob->mem_addr;
   /**
    * Check if the pointer is type of list.
    */
@@ -140,12 +140,12 @@ v_list_expand(v_pointer_object *lst_ptr,
     LST_LEN_GROW(tot_len);
     u64 new_size = SIZE_LST_OB + tot_len * el_size;
 
-    v_err status = v_heap_reallocate(lst_ptr, new_size);
-    if (status != V_ERR_NONE) {
-      return status;
+    v_err stat = v_heap_reallocate(ob, new_size);
+    if (IS_ERR(stat)) {
+      return stat;
     }
 
-    lst_addr = lst_ptr->mem_addr;
+    lst_addr = ob->mem_addr;
     /**
      * Set the length pointer to 
      * the location within the 
@@ -168,9 +168,9 @@ v_list_expand(v_pointer_object *lst_ptr,
 }
 
 static inline u8 
-match_list_type(u8 lst_type, u8 type)
+match_list_type(u8 ob_type, u8 type)
 {
-  switch (lst_type) {
+  switch (ob_type) {
 
     case OB_LST_INT: return type == OB_INT;
     case OB_LST_FLT: return type == OB_FLT;
@@ -185,16 +185,16 @@ match_list_type(u8 lst_type, u8 type)
 }
 
 v_err 
-v_list_push(v_pointer_object *lst_ptr, 
-            v_pointer_object *ptr)
+v_list_push(v_object *lst, 
+            v_object *ob)
 {
   /**
    * Validate the element type to be pushed to 
    * the list, this could be replaced by a pre 
    * check instruction in later builds.
    */
-  u8 *lst_addr = lst_ptr->mem_addr;
-  u8 *ob_addr = ptr->mem_addr;
+  u8 *lst_addr = lst->mem_addr;
+  u8 *ob_addr = ob->mem_addr;
   u8 lst_type = *V_TYPE(lst_addr);
 
   /**
@@ -206,14 +206,14 @@ v_list_push(v_pointer_object *lst_ptr,
     return V_ERR_OB_TYP_UNMATCH;
   }
 
-  v_err status;
+  v_err stat;
   u8 *el_addr;
   /**
    * Attempt to expand the list by 1.
    */
-  status = v_list_expand(lst_ptr, &el_addr);
-  if (status != V_ERR_NONE) {
-    return status;
+  stat = v_list_expand(lst, &el_addr);
+  if (IS_ERR(stat)) {
+    return stat;
   }
 
   switch (lst_type) {
@@ -242,19 +242,19 @@ v_list_push(v_pointer_object *lst_ptr,
      * the object pointer.
      */
     case OB_LST_PTR:
-    *V_QPTR(el_addr) = (u64) ptr;
+    *V_QPTR(el_addr) = (u64) ob;
     break;
 
     default: break;
 
   }
 
-  return status;
+  return stat;
 }
 
 v_err 
-v_list_pop( v_pointer_object *lst, 
-            v_pointer_object **ob) 
+v_list_pop( v_object *lst, 
+            v_object **ob) 
 {
   if (v_is_null(lst)) {
     return V_ERR_OB_NULL;
@@ -310,7 +310,7 @@ v_list_pop( v_pointer_object *lst,
      * pointer, return directly.
      */
     *ob = V_PTR(*(V_LST_QDAT(lst_addr) + new_len));
-    return;
+    return V_ERR_NONE;
 
     default: break;
   }
@@ -324,18 +324,18 @@ v_list_pop( v_pointer_object *lst,
 }
 
 v_err 
-v_list_concatenate( v_pointer_object **ob, 
-                    v_pointer_object *ob_a, 
-                    v_pointer_object *ob_b)
+v_list_concatenate( v_object **ob, 
+                    v_object *a_lst, 
+                    v_object *b_lst)
 {
-  if (v_is_null(ob_a) || 
-      v_is_null(ob_b)) {
+  if (v_is_null(a_lst) || 
+      v_is_null(b_lst)) {
 
     return V_ERR_OB_NULL;
   }
 
-  u8 *a_addr = ob_a->mem_addr;
-  u8 *b_addr = ob_b->mem_addr;
+  u8 *a_addr = a_lst->mem_addr;
+  u8 *b_addr = b_lst->mem_addr;
 
   u8 a_type = *V_TYPE(a_addr);
   if (!V_IS_LST(a_addr) || !V_IS_LST(b_addr) || 
@@ -349,7 +349,7 @@ v_list_concatenate( v_pointer_object **ob,
     return V_ERR_API_INV_CALL;
   }
 
-  v_err status;
+  v_err stat;
   u32 a_len = *V_LST_POS(a_addr);
   u32 b_len = *V_LST_POS(b_addr);
 
@@ -365,32 +365,14 @@ v_list_concatenate( v_pointer_object **ob,
    * If A is empty, clone B as the new list.
    */
   else if (a_len == 0) {
-    /**
-     * To reduce overhead in cloning process, 
-     * we will just allocate a new object with 
-     * the size of the template object, and 
-     * copy all bytes.
-     */
-    status = v_heap_allocate(ob, *V_LST_LEN(b_addr));
-
-    if (status == V_ERR_NONE) {
-      memcpy((*ob)->mem_addr, b_addr, b_len);
-    }
-
-    return status;
+    return vm_heap_clone(ob, b_lst);
   }
 
   /**
    * If B is empty, clone A as the new list.
    */
   else if (b_len == 0) {
-    status = v_heap_allocate(ob, *V_LST_LEN(a_addr));
-
-    if (status == V_ERR_NONE) {
-      memcpy((*ob)->mem_addr, a_addr, a_len);
-    }
-
-    return status;
+    return vm_heap_clone(ob, a_lst);
   }
 
   /**
@@ -398,9 +380,9 @@ v_list_concatenate( v_pointer_object **ob,
    * we must use v_make_list_object to create the list to confine 
    * standardize the length.
    */
-  status = v_make_list_object(ob, a_type, a_len + b_len, NULL);
-  if (status != V_ERR_NONE) {
-    return status;
+  stat = v_make_list_object(ob, a_type, a_len + b_len, NULL);
+  if (IS_ERR(stat)) {
+    return stat;
   }
 
   u8 *ob_addr = (*ob)->mem_addr;
@@ -424,7 +406,5 @@ v_list_concatenate( v_pointer_object **ob,
           V_LST_BDAT(b_addr), 
           b_len * el_size);
 
-  return status;
+  return stat;
 }
-
-#undef LST_LEN_GROW

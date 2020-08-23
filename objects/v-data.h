@@ -20,7 +20,7 @@
 #define V_QDAT(addr) V_QPTR(addr + OFF_DAT)
 
 v_err 
-v_make_data_object( v_pointer_object **ptr, 
+v_make_data_object( v_object **ob, 
                     u8 type, 
                     u64 dat);
 

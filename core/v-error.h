@@ -42,6 +42,6 @@ typedef enum {
   V_ERR_LST_MAX_LEN
 } v_err;
 
-#define IS_ERR(status) status != V_ERR_NONE
+#define IS_ERR(stat) stat != V_ERR_NONE
 
 #endif

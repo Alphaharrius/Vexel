@@ -121,27 +121,27 @@ v_initialize_heap(u64 heap_size,
   v_heap.ob_space_size = heap_size - ptr_table_size;
   
   struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-  ptr_table->base_ptr = V_PTR(heap_addr);
-  u32 tot_ptr_cnt = ptr_table_size / sizeof(v_pointer_object);
-  ptr_table->top_ptr = ptr_table->base_ptr + tot_ptr_cnt - 1;
+  ptr_table->base = V_PTR(heap_addr);
+  u32 tot_ptr_cnt = ptr_table_size / sizeof(v_object);
+  ptr_table->top = ptr_table->base + tot_ptr_cnt - 1;
 
   /**
    * Initialize the pointer table bytes to value zero as:
    *  0 => bytesize = 0,
    *  0 => mem_addr = 0 = ((void *) 0) = NULL
    */
-  memset(heap_addr, 0x00, tot_ptr_cnt * sizeof(v_pointer_object));
+  memset(heap_addr, 0x00, tot_ptr_cnt * sizeof(v_object));
 
   /**
    * The pointer table index 0 is reserved for the null pointer 
    * of the Vexel runtime, all references to null pointer will 
    * be pointed to the null pointer index position.
    */
-  ptr_table->pos_ptr = ptr_table->base_ptr + 1;
+  ptr_table->pos = ptr_table->base + 1;
 }
 
 v_err 
-v_heap_allocate(v_pointer_object **ptr, u64 size) 
+v_heap_allocate(v_object **ptr, u64 size) 
 {
   /**
    * Allocation byte size is not allowed to be 
@@ -151,28 +151,28 @@ v_heap_allocate(v_pointer_object **ptr, u64 size)
     return V_ERR_HEAP_OUT_OF_MEM;
   }
 
-  v_pointer_object *p;
+  v_object *p;
   struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
   /**
    * Return the next avaliable pointer if offset of 
    * the distribution pointer is yet to reach the 
    * top position.
    */
-  if (ptr_table->pos_ptr <= ptr_table->top_ptr) {
-    p = ptr_table->pos_ptr++;
+  if (ptr_table->pos <= ptr_table->top) {
+    p = ptr_table->pos++;
   } 
   /**
    * Lookup the pointer table for unused pointer positions
    */
   else {
-    p = ptr_table->base_ptr + 1;
-    v_pointer_object *top_ptr = ptr_table->top_ptr;
+    p = ptr_table->base + 1;
+    v_object *top = ptr_table->top;
     while (p->mem_addr != NULL) {
       /**
        * Throw exception if the table does not 
        * have any unused pointer positions.
        */
-      if (++p == ptr_table->top_ptr) {
+      if (++p == ptr_table->top) {
         return V_ERR_HEAP_NO_IDX;
       }
     }
@@ -196,7 +196,7 @@ v_heap_allocate(v_pointer_object **ptr, u64 size)
 }
 
 v_err 
-v_heap_reallocate(v_pointer_object *ptr, u64 size) 
+v_heap_reallocate(v_object *ptr, u64 size) 
 {
   /**
    * Allocation byte size is not allowed to be 
@@ -233,7 +233,22 @@ v_heap_reallocate(v_pointer_object *ptr, u64 size)
   return V_ERR_NONE;
 }
 
-u8 v_is_null(v_pointer_object *ptr)
+v_err 
+vm_heap_clone(v_object **des, v_object *src)
+{
+  v_err stat;
+  stat = v_heap_allocate(des, src->size);
+
+  if (IS_ERR(stat)) {
+    return stat;
+  }
+
+  memcpy((*des)->mem_addr, src->mem_addr, src->size);
+
+  return stat;
+}
+
+u8 v_is_null(v_object *ptr)
 {
   if (ptr == V_PTR(v_heap.base_addr) || !ptr->mem_addr) {
     return TRUE;

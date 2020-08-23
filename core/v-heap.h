@@ -30,12 +30,12 @@ typedef struct {
    */
   u64 size;
 
-} v_pointer_object;
+} v_object;
 
 /**
  * Cast an address into a pointer object.
  */
-#define V_PTR(addr) ((v_pointer_object *) (addr))
+#define V_PTR(addr) ((v_object *) (addr))
 
 /**
  * A macro for retrieving the global null pointer.
@@ -77,18 +77,18 @@ struct v_heap_object {
      * The first pointer of the table, 
      * it should carry the same address 
      * of the heap allocation, but of 
-     * v_pointer_object type.
+     * v_object type.
      */
-    v_pointer_object *base_ptr;
+    v_object *base;
     /**
      * The latest avaliable pointer for 
      * a new allocation.
      */
-    v_pointer_object *pos_ptr;
+    v_object *pos;
     /**
      * The last pointer in the pointer table.
      */
-    v_pointer_object *top_ptr;
+    v_object *top;
 
   } ptr_table;
   
@@ -109,7 +109,7 @@ void v_initialize_heap(u64 heap_size, u64 ptr_table_size);
  * @param byte_size: The byte size to be allocated, no larger than block size.
  * @return: The status of the operation.
  */
-v_err v_heap_allocate(v_pointer_object **ptr, u64 size);
+v_err v_heap_allocate(v_object **ptr, u64 size);
 
 /**
  * This method reallocates the memory indicated by the pointer 
@@ -121,7 +121,18 @@ v_err v_heap_allocate(v_pointer_object **ptr, u64 size);
  * @param byte_size: The byte size to be allocated, no larger than block size.
  * @return: The status of the operation.
  */
-v_err v_heap_reallocate(v_pointer_object *ptr, u64 size);
+v_err v_heap_reallocate(v_object *ptr, u64 size);
+
+/**
+ * This method clones the object indicated by the 
+ * pointer into a new allocated pointer.
+ * This is an internal method, no object validation 
+ * is provided, please use with caution.
+ * @param des: The destination pointer address.
+ * @param src: The source pointer.
+ * @return: The status of the operation.
+ */
+v_err vm_heap_clone(v_object **des, v_object *src);
 
 /**
  * This method free the memory indicated by the pointer, 
@@ -130,7 +141,7 @@ v_err v_heap_reallocate(v_pointer_object *ptr, u64 size);
  * @param ptr: The pointer associated to the allocated memory.
  * @return: The status of the operation.
  */
-v_err v_heap_free(v_pointer_object *ptr);
+v_err v_heap_free(v_object *ptr);
 
 /**
  * This method is a safe check if a pointer is null. 
@@ -142,6 +153,6 @@ v_err v_heap_free(v_pointer_object *ptr);
  * @param: The pointer to be checked.
  * @return: Boolean value of the checking.
  */
-u8 v_is_null(v_pointer_object *ptr);
+u8 v_is_null(v_object *ptr);
 
 #endif

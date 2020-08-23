@@ -6,7 +6,7 @@
  */
 
 v_err 
-v_make_data_object( v_pointer_object **ptr, 
+v_make_data_object( v_object **ob, 
                     u8 type, 
                     u64 dat) 
 {
@@ -15,12 +15,12 @@ v_make_data_object( v_pointer_object **ptr,
   }
 
   v_err stat;
-  stat = v_heap_allocate(ptr, SIZE_DAT_OB);
+  stat = v_heap_allocate(ob, SIZE_DAT_OB);
   if (IS_ERR(stat)) {
     return stat;
   }
 
-  u8 * addr = (*ptr)->mem_addr;
+  u8 * addr = (*ob)->mem_addr;
   *V_TYPE(addr) = type;
   
   switch (type) {

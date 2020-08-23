@@ -24,6 +24,6 @@
 #define COLOR_BOLD_CYAN     "[1;36m"
 
 #define LOG(color, head, text) \
-  printf("\033%s[%s]\t%s\033%s\n", color, head, text, COLOR_DEFAULT)
+  printf("\033%s[%s] %s\033%s\n", color, head, text, COLOR_DEFAULT)
 
 #endif
