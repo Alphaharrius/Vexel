@@ -83,14 +83,14 @@ _system_free_memory(void *mem_addr)
 
 void 
 v_initialize_heap(u64 heap_size, 
-                  u64 ptr_table_size)
+                  u64 table_size)
 {
   /**
    * Check if the pointer table byte size is less than 
    * 50% of the heap byte size, terminate the virtua 
    * machine if false.
    */
-  if (ptr_table_size << 1 > heap_size) {
+  if (table_size << 1 > heap_size) {
     FATAL("the size of pointer table must be \
         smaller than 50% of the heap byte size");
   }
@@ -107,7 +107,7 @@ v_initialize_heap(u64 heap_size,
    * Offset the base address of allocable 
    * memory by the pointer table byte size.
    */
-  v_heap.base_addr = heap_addr + ptr_table_size;
+  v_heap.base_addr = heap_addr + table_size;
   /**
    * The allocation offset is initialized 
    * to the base address.
@@ -118,12 +118,14 @@ v_initialize_heap(u64 heap_size,
 
   v_heap.tot_size = heap_size;
 
-  v_heap.ob_space_size = heap_size - ptr_table_size;
+  v_heap.ob_space_size = heap_size - table_size;
   
-  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
-  ptr_table->base = V_PTR(heap_addr);
-  u32 tot_ptr_cnt = ptr_table_size / sizeof(v_object);
-  ptr_table->top = ptr_table->base + tot_ptr_cnt - 1;
+  struct _table_object *table = &v_heap.table;
+
+  table->base = V_PTR(heap_addr);
+  
+  u32 tot_ptr_cnt = table_size / sizeof(v_object);
+  table->top = table->base + tot_ptr_cnt - 1;
 
   /**
    * Initialize the pointer table bytes to value zero as:
@@ -137,7 +139,7 @@ v_initialize_heap(u64 heap_size,
    * of the Vexel runtime, all references to null pointer will 
    * be pointed to the null pointer index position.
    */
-  ptr_table->pos = ptr_table->base + 1;
+  table->pos = table->base + 1;
 }
 
 v_err 
@@ -152,27 +154,27 @@ v_heap_allocate(v_object **ptr, u64 size)
   }
 
   v_object *p;
-  struct v_ptr_table_object *ptr_table = &v_heap.ptr_table;
+  struct _table_object *table = &v_heap.table;
   /**
    * Return the next avaliable pointer if offset of 
    * the distribution pointer is yet to reach the 
    * top position.
    */
-  if (ptr_table->pos <= ptr_table->top) {
-    p = ptr_table->pos++;
+  if (table->pos <= table->top) {
+    p = table->pos++;
   } 
   /**
    * Lookup the pointer table for unused pointer positions
    */
   else {
-    p = ptr_table->base + 1;
-    v_object *top = ptr_table->top;
+    p = table->base + 1;
+    v_object *top = table->top;
     while (p->mem_addr != NULL) {
       /**
        * Throw exception if the table does not 
        * have any unused pointer positions.
        */
-      if (++p == ptr_table->top) {
+      if (++p == table->top) {
         return V_ERR_HEAP_NO_IDX;
       }
     }

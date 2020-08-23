@@ -33,7 +33,7 @@ main()
     }
   }
 
-  v_object *ptr = v_heap.ptr_table.base;
+  v_object *ptr = v_heap.table.base;
   u8 i = 0; while (i < 5) {
     print_pointer(ptr + i++);
   }

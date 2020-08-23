@@ -72,7 +72,7 @@ struct v_heap_object {
    * The pointer table for accessing 
    * all allocated chunks.
    */
-  struct v_ptr_table_object {
+  struct _table_object {
     /**
      * The first pointer of the table, 
      * it should carry the same address 
@@ -90,18 +90,18 @@ struct v_heap_object {
      */
     v_object *top;
 
-  } ptr_table;
+  } table;
   
 } v_heap;
 
 /**
  * This method initializes the Vexel Heap for object data storage.
  * @param heap_size: The total byte size of the heap allocation.
- * @param ptr_table_size: The byte size of the hyperspace, 
+ * @param table_size: The byte size of the hyperspace, 
  *                        which stores the pointer index 
  *                        to address mapping table.
  */
-void v_initialize_heap(u64 heap_size, u64 ptr_table_size);
+void v_initialize_heap(u64 heap_size, u64 table_size);
 
 /**
  * This method assigns the pointer to the address of the allocated bytes.
