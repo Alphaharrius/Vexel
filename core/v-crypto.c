@@ -2,7 +2,7 @@
 
 #define CRYPT_KEYS_LEN 7
 
-u64 crypt_cache[CRYPT_KEYS_LEN] = {
+static u64 CRYPT_BUF[CRYPT_KEYS_LEN] = {
   0xEB2DF331CD23AC43,
   0xCD23AC43BB4681C3,
   0xBB4681C3B54FCBAF,
@@ -12,7 +12,7 @@ u64 crypt_cache[CRYPT_KEYS_LEN] = {
   0xE4FECE2DEB2DF331
 };
 
-#define CRYPT_KEY(n) crypt_cache[n % CRYPT_KEYS_LEN]
+#define CRYPT_KEY(n) CRYPT_BUF[n % CRYPT_KEYS_LEN]
 
 void 
 v_initialize_crypto(void) {
@@ -41,7 +41,7 @@ v_initialize_crypto(void) {
   u64 *rand = V_QPTR(dat);
 
   for (u8 i = 0; i < CRYPT_KEYS_LEN; i++) {
-    crypt_cache[i] ^= *rand++;
+    CRYPT_BUF[i] ^= *rand++;
   }
 
 #endif
