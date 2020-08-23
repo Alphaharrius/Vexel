@@ -12,10 +12,12 @@
 #include "v-log.h"
 #include "v-error.h"
 #include "v-heap.h"
+#include "v-crypto.h"
 
 #include "../objects/v-object.h"
 #include "../objects/v-data.h"
 #include "../objects/v-list.h"
+#include "../objects/v-array.h"
 #include "../objects/v-map.h"
 
 #endif
