@@ -62,7 +62,7 @@ static inline void *
  */
 system_allocate_memory(u64 byte_size)
 {
-#if defined(WINDOWS)
+#if defined(_WIN32)
   return VirtualAlloc((LPVOID) NULL, 
                       (SIZE_T) byte_size, 
                       MEM_RESERVE | MEM_COMMIT, 
@@ -73,7 +73,7 @@ system_allocate_memory(u64 byte_size)
 static inline u32
 system_free_memory(void *mem_addr)
 {
-#if defined(WINDOWS)
+#if defined(_WIN32)
   return (u32) VirtualFree((LPVOID) mem_addr, 
       0, MEM_RELEASE);
 #endif
@@ -136,7 +136,7 @@ Ve_InitializeHeap(u64 heap_size,
      * be pointed to the null pointer index position.
      */
     .pos = Ve_PTR(heap_addr) + 1
-  }
+  };
 }
 
 Ve_Err 

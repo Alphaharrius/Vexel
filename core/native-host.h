@@ -10,10 +10,8 @@
 #endif
 
 #if defined(_WIN32)
-#define WINDOWS
 #include <Windows.h>
-#elif defined(__unix__)
-#define UNIX
+#elif defined(__linux__)
 #include <sys/mman.h>
 #endif
 
