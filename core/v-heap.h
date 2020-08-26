@@ -11,6 +11,13 @@
 #include "v-type.h"
 #include "v-error.h"
 
+#define WARN_INV_PTR_TABLE_SIZE \
+  "the size of pointer table must be " \
+  "smaller than 50% of the heap byte size"
+
+#define WARN_HEAP_ALLOC_FAILED \
+  "unable to allocate heap memory"
+
 /**
  * The basic unit of pointer index 
  * in the heap pointer table, it 

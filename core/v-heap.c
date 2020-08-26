@@ -89,8 +89,7 @@ Ve_InitializeHeap(u64 heap_size,
    * machine if false.
    */
   if (table_size << 1 > heap_size) {
-    Ve_FATAL("the size of pointer table must be \
-        smaller than 50% of the heap byte size");
+    Ve_FATAL(WARN_INV_PTR_TABLE_SIZE);
   }
 
   u8 *heap_addr = system_allocate_memory(heap_size);
@@ -98,7 +97,7 @@ Ve_InitializeHeap(u64 heap_size,
    * Terminates the process if the heap allocation failed.
    */
   if (!heap_addr) {
-    Ve_FATAL("unable to allocate heap memory");
+    Ve_FATAL(WARN_HEAP_ALLOC_FAILED);
   }
 
   /**
@@ -106,7 +105,7 @@ Ve_InitializeHeap(u64 heap_size,
    * memory by the pointer table byte size.
    */
   u8 *base_addr = heap_addr + table_size;
-  
+
   Ve_Heap = (VeHeap) {
     .base_addr = base_addr,
     /**
