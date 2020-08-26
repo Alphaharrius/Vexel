@@ -6,11 +6,11 @@
  */
 
 Ve_Err 
-v_make_data_object( VeObject **ob, 
+Ve_CreateDataObject( VeObject **ob, 
                     u8 type, 
                     u64 dat) 
 {
-  if (V_NOT_DAT & type) {
+  if (MASK_NOT_DAT & type) {
     return ERR_API_INV_CALL;
   }
 
@@ -21,19 +21,19 @@ v_make_data_object( VeObject **ob,
   }
 
   u8 * addr = (*ob)->mem_addr;
-  *V_TYPE(addr) = type;
+  *Ve_TYPE(addr) = type;
   
   switch (type) {
 
     case OB_BOO:
     case OB_CHR:
-    *V_BDAT(addr) = (u8) dat;
+    *Ve_BDAT(addr) = (u8) dat;
     break;
 
     case OB_INT:
     case OB_FLT:
     case OB_NAT:
-    *V_QDAT(addr) = dat;
+    *Ve_QDAT(addr) = dat;
 
     default: break;
   }

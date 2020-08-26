@@ -62,22 +62,20 @@ static inline void *
  */
 system_allocate_memory(u64 byte_size)
 {
-#ifdef WINDOWS
+#if defined(WINDOWS)
   return VirtualAlloc((LPVOID) NULL, 
                       (SIZE_T) byte_size, 
                       MEM_RESERVE | MEM_COMMIT, 
                       PAGE_READWRITE);
-#elif UNIX
 #endif
 }
 
 static inline u32
 system_free_memory(void *mem_addr)
 {
-#ifdef WINDOWS
+#if defined(WINDOWS)
   return (u32) VirtualFree((LPVOID) mem_addr, 
       0, MEM_RELEASE);
-#elif UNIX
 #endif
 }
 
@@ -91,7 +89,7 @@ Ve_InitializeHeap(u64 heap_size,
    * machine if false.
    */
   if (table_size << 1 > heap_size) {
-    FATAL("the size of pointer table must be \
+    Ve_FATAL("the size of pointer table must be \
         smaller than 50% of the heap byte size");
   }
 
@@ -100,32 +98,30 @@ Ve_InitializeHeap(u64 heap_size,
    * Terminates the process if the heap allocation failed.
    */
   if (!heap_addr) {
-    FATAL("unable to allocate heap memory");
+    Ve_FATAL("unable to allocate heap memory");
   }
 
   /**
    * Offset the base address of allocable 
    * memory by the pointer table byte size.
    */
-  v_heap.base_addr = heap_addr + table_size;
+  Ve_Heap.base_addr = heap_addr + table_size;
   /**
    * The allocation offset is initialized 
    * to the base address.
    */
-  v_heap.pos_addr = v_heap.base_addr;
+  Ve_Heap.pos_addr = Ve_Heap.base_addr;
 
-  v_heap.top_addr = heap_addr + heap_size - 1;
+  Ve_Heap.top_addr = heap_addr + heap_size - 1;
 
-  v_heap.tot_size = heap_size;
+  Ve_Heap.tot_size = heap_size;
 
-  v_heap.ob_space_size = heap_size - table_size;
-  
-  struct _table_object *table = &v_heap.table;
+  Ve_Heap.ob_space_size = heap_size - table_size;
 
-  table->base = Ve_PTR(heap_addr);
+  Ve_PointerTable.base = Ve_PTR(heap_addr);
   
   u32 tot_ptr_cnt = table_size / sizeof(VeObject);
-  table->top = table->base + tot_ptr_cnt - 1;
+  Ve_PointerTable.top = Ve_PointerTable.base + tot_ptr_cnt - 1;
 
   /**
    * Initialize the pointer table bytes to value zero as:
@@ -139,7 +135,7 @@ Ve_InitializeHeap(u64 heap_size,
    * of the Vexel runtime, all references to null pointer will 
    * be pointed to the null pointer index position.
    */
-  table->pos = table->base + 1;
+  Ve_PointerTable.pos = Ve_PointerTable.base + 1;
 }
 
 Ve_Err 
@@ -149,32 +145,31 @@ Ve_HeapAllocate(VeObject **ptr, u64 size)
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
-  if (size > v_heap.ob_space_size) {
+  if (size > Ve_Heap.ob_space_size) {
     return ERR_HEAP_OUT_OF_MEM;
   }
 
   VeObject *p;
-  struct _table_object *table = &v_heap.table;
   /**
    * Return the next avaliable pointer if offset of 
    * the distribution pointer is yet to reach the 
    * top position.
    */
-  if (table->pos <= table->top) {
-    p = table->pos++;
+  if (Ve_PointerTable.pos <= Ve_PointerTable.top) {
+    p = Ve_PointerTable.pos++;
   } 
   /**
    * Lookup the pointer table for unused pointer positions
    */
   else {
-    p = table->base + 1;
-    VeObject *top = table->top;
+    p = Ve_PointerTable.base + 1;
+    VeObject *top = Ve_PointerTable.top;
     while (p->mem_addr != NULL) {
       /**
        * Throw exception if the table does not 
        * have any unused pointer positions.
        */
-      if (++p == table->top) {
+      if (++p == Ve_PointerTable.top) {
         return ERR_HEAP_NO_IDX;
       }
     }
@@ -184,10 +179,10 @@ Ve_HeapAllocate(VeObject **ptr, u64 size)
    * The allocator does not care about any unused 
    * holes before the allocation offset.
    */
-  if (v_heap.pos_addr + size <= v_heap.top_addr) {
-    p->mem_addr = v_heap.pos_addr;
+  if (Ve_Heap.pos_addr + size <= Ve_Heap.top_addr) {
+    p->mem_addr = Ve_Heap.pos_addr;
     p->size = size;
-    v_heap.pos_addr += size;
+    Ve_Heap.pos_addr += size;
     *ptr = p;
 
     return ERR_NONE;
@@ -204,7 +199,7 @@ Ve_HeapReallocate(VeObject *ptr, u64 size)
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
-  if (size > v_heap.ob_space_size) {
+  if (size > Ve_Heap.ob_space_size) {
     return ERR_HEAP_OUT_OF_MEM;
   }
 
@@ -214,10 +209,10 @@ Ve_HeapReallocate(VeObject *ptr, u64 size)
   u8 *prior_addr = ptr->mem_addr;
   u64 prior_size = ptr->size;
 
-  if (v_heap.pos_addr + size <= v_heap.top_addr) {
-    ptr->mem_addr = v_heap.pos_addr;
+  if (Ve_Heap.pos_addr + size <= Ve_Heap.top_addr) {
+    ptr->mem_addr = Ve_Heap.pos_addr;
     ptr->size = size;
-    v_heap.pos_addr += size;
+    Ve_Heap.pos_addr += size;
   } else {
     return ERR_HEAP_OUT_OF_MEM;
   }
@@ -252,7 +247,7 @@ Internal_HeapClone(VeObject **des, VeObject *src)
 
 u8 Ve_IsNull(VeObject *ptr)
 {
-  if (ptr == Ve_PTR(v_heap.base_addr) || !ptr->mem_addr) {
+  if (ptr == Ve_NULLPTR || !ptr->mem_addr) {
     return TRUE;
   }
 

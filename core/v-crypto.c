@@ -36,7 +36,7 @@ v_initialize_crypto(void) {
     goto error;
   }
   
-  u64 *rand = V_QPTR(dat);
+  u64 *rand = Ve_QPTR(dat);
 
   for (u8 i = 0; i < C_K_LEN; i++) {
     C_K[i] ^= *rand++;
@@ -47,7 +47,7 @@ v_initialize_crypto(void) {
   return;
 
   error:
-  FATAL("error during crypto key generation...");
+  Ve_FATAL("error during crypto key generation...");
 }
 
 u64 

@@ -15,7 +15,7 @@ static u64 CRY_PROV = 0;
 #endif
 
 static u8
-__windows_initialize_crypt(void)
+windows_initialize_crypt(void)
 {
 #if defined(__BCRYPT_H__)
 #define NT_STAT_OK(stat) (((NTSTATUS) (stat)) >= 0)
@@ -41,7 +41,7 @@ __windows_initialize_crypt(void)
 }
 
 static u8
-__windows_system_generate_random(u8 *buf, u32 len)
+windows_system_generate_random(u8 *buf, u32 len)
 {
   if (len > 256) {
     return FALSE;
@@ -73,7 +73,7 @@ __windows_system_generate_random(u8 *buf, u32 len)
 
 int main(void) {
 
-  printf("%llx\n", __initialize_crypt_windows());
+  printf("%llx\n", windows_initialize_crypt());
 
   return 0;
 

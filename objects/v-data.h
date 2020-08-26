@@ -14,13 +14,13 @@
 
 #define SIZE_DAT_OB OFF_DAT + SIZE_64
 
-#define V_BDAT(addr) V_BPTR(addr + OFF_DAT)
-#define V_WDAT(addr) V_WPTR(addr + OFF_DAT)
-#define V_DDAT(addr) V_DPTR(addr + OFF_DAT)
-#define V_QDAT(addr) V_QPTR(addr + OFF_DAT)
+#define Ve_BDAT(addr) Ve_BPTR(addr + OFF_DAT)
+#define Ve_WDAT(addr) Ve_WPTR(addr + OFF_DAT)
+#define Ve_DDAT(addr) Ve_DPTR(addr + OFF_DAT)
+#define Ve_QDAT(addr) Ve_QPTR(addr + OFF_DAT)
 
 Ve_Err 
-v_make_data_object( VeObject **ob, 
+Ve_CreateDataObject(VeObject **ob, 
                     u8 type, 
                     u64 dat);
 

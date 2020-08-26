@@ -23,7 +23,7 @@
 #define COLOR_CYAN          "[0;36m"
 #define COLOR_BOLD_CYAN     "[1;36m"
 
-#define LOG(color, head, text) \
+#define Ve_LOG(color, head, text) \
   printf("\033%s[%s] %s\033%s\n", color, head, text, COLOR_DEFAULT)
 
 #endif

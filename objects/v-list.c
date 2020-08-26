@@ -17,7 +17,7 @@
   tot_len = (tot_len << 1) - (tot_len >> 1);
 
 Ve_Err 
-v_make_list_object( VeObject **ob, 
+Ve_CreateListObject( VeObject **ob, 
                     u8 type, 
                     u32 len, 
                     u8 *d_ptr)
@@ -77,7 +77,7 @@ v_make_list_object( VeObject **ob,
   Ve_Err stat;
   u64 ob_size = SIZE_LST_OB + el_size * tot_len;
 
-  if (ob_size > v_heap.ob_space_size) {
+  if (ob_size > Ve_Heap.ob_space_size) {
     return ERR_HEAP_OUT_OF_MEM;
   }
 
@@ -88,20 +88,20 @@ v_make_list_object( VeObject **ob,
   }
 
   u8 *ob_addr = (*ob)->mem_addr;
-  *V_TYPE(ob_addr) = type;
-  *V_EL_SIZE(ob_addr) = el_size;
-  *V_LST_POS(ob_addr) = len;
-  *V_LST_LEN(ob_addr) = tot_len;
+  *Ve_TYPE(ob_addr) = type;
+  *Ve_ELSIZE(ob_addr) = el_size;
+  *Ve_LST_POS(ob_addr) = len;
+  *Ve_LST_LEN(ob_addr) = tot_len;
 
   if (len && d_ptr) {
-    memcpy(V_LST_BDAT(ob_addr), d_ptr, el_size * len);
+    memcpy(Ve_LST_BDAT(ob_addr), d_ptr, el_size * len);
   }
 
   return stat;
 }
 
 Ve_Err 
-v_list_expand(VeObject *ob,
+Ve_ListExpand(VeObject *ob,
               u8 **addr)
 {
   /**
@@ -116,17 +116,17 @@ v_list_expand(VeObject *ob,
   /**
    * Check if the pointer is type of list.
    */
-  if (!V_IS_LST(lst_addr)) {
+  if (!Ve_ISLST(lst_addr)) {
     return ERR_OB_NOT_LST;
   }
 
-  u8 el_size = *V_EL_SIZE(lst_addr);
+  u8 el_size = *Ve_ELSIZE(lst_addr);
 
   /**
    * Using pointer for better handling.
    */
-  u32 *len = V_LST_POS(lst_addr);
-  u32 tot_len = *V_LST_LEN(lst_addr);
+  u32 *len = Ve_LST_POS(lst_addr);
+  u32 tot_len = *Ve_LST_LEN(lst_addr);
 
   /**
    * Check if the length is smaller than 
@@ -151,18 +151,18 @@ v_list_expand(VeObject *ob,
      * the location within the 
      * new allocation.
      */
-    len = V_LST_POS(lst_addr);
+    len = Ve_LST_POS(lst_addr);
     /**
      * Only the total length requires an update.
      */
-    *V_LST_LEN(lst_addr) = tot_len;
+    *Ve_LST_LEN(lst_addr) = tot_len;
   }
 
   /**
    * Set the return address to the last 
    * element address of the list.
    */
-  *addr = V_LST_BDAT(lst_addr) + (*len)++ * el_size;
+  *addr = Ve_LST_BDAT(lst_addr) + (*len)++ * el_size;
 
   return ERR_NONE;
 }
@@ -185,7 +185,7 @@ match_list_type(u8 ob_type, u8 type)
 }
 
 Ve_Err 
-v_list_push(VeObject *lst, 
+Ve_ListPush(VeObject *lst, 
             VeObject *ob)
 {
   /**
@@ -195,14 +195,14 @@ v_list_push(VeObject *lst,
    */
   u8 *lst_addr = lst->mem_addr;
   u8 *ob_addr = ob->mem_addr;
-  u8 lst_type = *V_TYPE(lst_addr);
+  u8 lst_type = *Ve_TYPE(lst_addr);
 
   /**
    * As this is a static list, elements 
    * being pushed must be of same element 
    * type as the list.
    */
-  if (!match_list_type(lst_type, *V_TYPE(ob_addr))) {
+  if (!match_list_type(lst_type, *Ve_TYPE(ob_addr))) {
     return ERR_OB_TYP_UNMATCH;
   }
 
@@ -211,7 +211,7 @@ v_list_push(VeObject *lst,
   /**
    * Attempt to expand the list by 1.
    */
-  stat = v_list_expand(lst, &el_addr);
+  stat = Ve_ListExpand(lst, &el_addr);
   if (IS_ERR(stat)) {
     return stat;
   }
@@ -222,7 +222,7 @@ v_list_push(VeObject *lst,
      * Charactor type have size of 1 byte.
      */
     case OB_LST_CHR:
-    *el_addr = *V_BDAT(ob_addr);
+    *el_addr = *Ve_BDAT(ob_addr);
     break;
 
     /**
@@ -230,7 +230,7 @@ v_list_push(VeObject *lst,
      */
     case OB_LST_INT:
     case OB_LST_FLT:
-    *V_QPTR(el_addr) = *V_QDAT(ob_addr);
+    *Ve_QPTR(el_addr) = *Ve_QDAT(ob_addr);
     break;
 
     /**
@@ -242,7 +242,7 @@ v_list_push(VeObject *lst,
      * the object pointer.
      */
     case OB_LST_PTR:
-    *V_QPTR(el_addr) = (u64) ob;
+    *Ve_QPTR(el_addr) = (u64) ob;
     break;
 
     default: break;
@@ -253,7 +253,7 @@ v_list_push(VeObject *lst,
 }
 
 Ve_Err 
-v_list_pop( VeObject *lst, 
+Ve_ListPop( VeObject *lst, 
             VeObject **ob) 
 {
   if (Ve_IsNull(lst)) {
@@ -262,11 +262,11 @@ v_list_pop( VeObject *lst,
 
   u8 *lst_addr = lst->mem_addr;
 
-  if (!V_IS_LST(lst_addr)) {
+  if (!Ve_ISLST(lst_addr)) {
     return ERR_OB_NOT_LST;
   }
 
-  if (*V_LST_POS(lst_addr) == 0) {
+  if (*Ve_LST_POS(lst_addr) == 0) {
     *ob = Ve_NULLPTR;
   }
   
@@ -276,11 +276,11 @@ v_list_pop( VeObject *lst,
    * set it as the new length, which is 
    * also the popped index.
    */
-  u32 new_len = -- *V_LST_POS(lst_addr);
+  u32 new_len = -- *Ve_LST_POS(lst_addr);
 
   u8 type;
   u64 dat;
-  switch (*V_TYPE(lst_addr)) {
+  switch (*Ve_TYPE(lst_addr)) {
 
     case OB_LST_CHR:
     type = OB_CHR;
@@ -289,17 +289,17 @@ v_list_pop( VeObject *lst,
      * to prevent being stored as a sign extended byte, 
      * casting the dat pointer to byte pointer.
      */
-    *V_BPTR(&dat) = *(V_LST_BDAT(lst_addr) + new_len);
+    *Ve_BPTR(&dat) = *(Ve_LST_BDAT(lst_addr) + new_len);
     break;
 
     case OB_LST_INT:
     type = OB_INT;
-    dat = *(V_LST_QDAT(lst_addr) + new_len);
+    dat = *(Ve_LST_QDAT(lst_addr) + new_len);
     break;
 
     case OB_LST_FLT:
     type = OB_FLT;
-    dat = *(V_LST_QDAT(lst_addr) + new_len);
+    dat = *(Ve_LST_QDAT(lst_addr) + new_len);
     break;
 
     case OB_LST_PTR:
@@ -309,7 +309,7 @@ v_list_pop( VeObject *lst,
      * pointer, which is also the popped 
      * pointer, return directly.
      */
-    *ob = Ve_PTR(*(V_LST_QDAT(lst_addr) + new_len));
+    *ob = Ve_PTR(*(Ve_LST_QDAT(lst_addr) + new_len));
     return ERR_NONE;
 
     default: break;
@@ -320,11 +320,11 @@ v_list_pop( VeObject *lst,
    * create a new object to store 
    * the popped element.
    */
-  return v_make_data_object(ob, type, dat);
+  return Ve_CreateDataObject(ob, type, dat);
 }
 
 Ve_Err 
-v_list_concatenate( VeObject **ob, 
+Ve_ListConcatenate( VeObject **ob, 
                     VeObject *a_lst, 
                     VeObject *b_lst)
 {
@@ -337,28 +337,28 @@ v_list_concatenate( VeObject **ob,
   u8 *a_addr = a_lst->mem_addr;
   u8 *b_addr = b_lst->mem_addr;
 
-  u8 a_type = *V_TYPE(a_addr);
-  if (!V_IS_LST(a_addr) || !V_IS_LST(b_addr) || 
+  u8 a_type = *Ve_TYPE(a_addr);
+  if (!Ve_ISLST(a_addr) || !Ve_ISLST(b_addr) || 
       /**
        * The lists to be concatenated must have 
        * the same type, as different list types 
        * have different element size.
        */
-      a_type != *V_TYPE(b_addr)) {
+      a_type != *Ve_TYPE(b_addr)) {
 
     return ERR_API_INV_CALL;
   }
 
   Ve_Err stat;
-  u32 a_len = *V_LST_POS(a_addr);
-  u32 b_len = *V_LST_POS(b_addr);
+  u32 a_len = *Ve_LST_POS(a_addr);
+  u32 b_len = *Ve_LST_POS(b_addr);
 
   /**
    * Handles the case which both lists are empty, 
    * create a new empty list.
    */
   if (!(a_len | b_len)) {
-    return v_make_list_object(ob, a_type, 0, NULL);
+    return Ve_CreateListObject(ob, a_type, 0, NULL);
   }
 
   /**
@@ -377,24 +377,24 @@ v_list_concatenate( VeObject **ob,
 
   /**
    * Create a new list with length of the total length of two lists, 
-   * we must use v_make_list_object to create the list to confine 
+   * we must use Ve_CreateListObject to create the list to confine 
    * standardize the length.
    */
-  stat = v_make_list_object(ob, a_type, a_len + b_len, NULL);
+  stat = Ve_CreateListObject(ob, a_type, a_len + b_len, NULL);
   if (IS_ERR(stat)) {
     return stat;
   }
 
   u8 *ob_addr = (*ob)->mem_addr;
-  u8 el_size = *V_EL_SIZE(a_addr);
+  u8 el_size = *Ve_ELSIZE(a_addr);
   u64 a_size = a_len * el_size;
 
   /**
    * Copy the data bytes from A to 
    * the data head address new list.
    */
-  memcpy( V_LST_BDAT(ob_addr), 
-          V_LST_BDAT(a_addr), 
+  memcpy( Ve_LST_BDAT(ob_addr), 
+          Ve_LST_BDAT(a_addr), 
           a_size);
 
   /**
@@ -402,8 +402,8 @@ v_list_concatenate( VeObject **ob,
    * the data address offsetted by 
    * the size of data from A.
    */
-  memcpy( V_LST_BDAT(ob_addr) + a_size, 
-          V_LST_BDAT(b_addr), 
+  memcpy( Ve_LST_BDAT(ob_addr) + a_size, 
+          Ve_LST_BDAT(b_addr), 
           b_len * el_size);
 
   return stat;

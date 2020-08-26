@@ -37,12 +37,7 @@ typedef struct {
  */
 #define Ve_PTR(addr) ((VeObject *) (addr))
 
-/**
- * A macro for retrieving the global null pointer.
- */
-#define Ve_NULLPTR Ve_PTR(v_heap.base_addr)
-
-struct v_heap_object {
+struct VeHeap {
   /**
    * The starting address of the 
    * heap object space.
@@ -68,31 +63,37 @@ struct v_heap_object {
    * for object allocation.
    */
   u64 ob_space_size;
-  /**
-   * The pointer table for accessing 
-   * all allocated chunks.
-   */
-  struct _table_object {
-    /**
-     * The first pointer of the table, 
-     * it should carry the same address 
-     * of the heap allocation, but of 
-     * VeObject type.
-     */
-    VeObject *base;
-    /**
-     * The latest avaliable pointer for 
-     * a new allocation.
-     */
-    VeObject *pos;
-    /**
-     * The last pointer in the pointer table.
-     */
-    VeObject *top;
-
-  } table;
   
-} v_heap;
+} Ve_Heap;
+
+/**
+ * The pointer table for accessing 
+ * all allocated chunks.
+ */
+struct VePointerTable {
+  /**
+   * The first pointer of the table, 
+   * it should carry the same address 
+   * of the heap allocation, but of 
+   * VeObject type.
+   */
+  VeObject *base;
+  /**
+   * The latest avaliable pointer for 
+   * a new allocation.
+   */
+  VeObject *pos;
+  /**
+   * The last pointer in the pointer table.
+   */
+  VeObject *top;
+
+} Ve_PointerTable;
+
+/**
+ * A macro for retrieving the global null pointer.
+ */
+#define Ve_NULLPTR Ve_PointerTable.base
 
 /**
  * This method initializes the Vexel Heap for object data storage.

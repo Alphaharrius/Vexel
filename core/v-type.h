@@ -1,5 +1,5 @@
-#ifndef V_TYPE_H
-#define V_TYPE_H
+#ifndef Ve_TYPE_H
+#define Ve_TYPE_H
 #pragma once
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.

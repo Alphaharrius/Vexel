@@ -27,24 +27,24 @@
 
 #define OB_MAP OB_TYPE_MAP
 
-#define V_BPTR(addr) (u8 *) (addr)
-#define V_WPTR(addr) (u16 *) (addr)
-#define V_DPTR(addr) (u32 *) (addr)
-#define V_QPTR(addr) (u64 *) (addr)
+#define Ve_BPTR(addr) (u8 *) (addr)
+#define Ve_WPTR(addr) (u16 *) (addr)
+#define Ve_DPTR(addr) (u32 *) (addr)
+#define Ve_QPTR(addr) (u64 *) (addr)
 
-#define V_TYPE(addr) V_BPTR(addr)
+#define Ve_TYPE(addr) Ve_BPTR(addr)
 
-#define V_NOT_DAT 0xE0
-#define V_NOT_LST 0xD0
-#define V_NOT_MAP 0xB0
+#define MASK_NOT_DAT 0xE0
+#define MASK_NOT_LST 0xD0
+#define MASK_NOT_MAP 0xB0
 
-#define V_IS_DAT(addr) \
-  !(V_NOT_DAT & *V_TYPE(addr))
+#define Ve_ISDAT(addr) \
+  !(MASK_NOT_DAT & *Ve_TYPE(addr))
 
-#define V_IS_LST(addr) \
-  !(V_NOT_LST & *V_TYPE(addr))
+#define Ve_ISLST(addr) \
+  !(MASK_NOT_LST & *Ve_TYPE(addr))
 
-#define V_IS_MAP(addr) \
-  !(V_NOT_MAP & *V_TYPE(addr))
+#define Ve_ISMAP(addr) \
+  !(MASK_NOT_MAP & *Ve_TYPE(addr))
 
 #endif

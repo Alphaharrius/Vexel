@@ -22,13 +22,13 @@
 #define OFF_LST_LEN OFF_LST_POS + SIZE_32
 #define OFF_LST_DAT OFF_LST_LEN + SIZE_32
 
-#define V_EL_SIZE(addr) V_BPTR(addr + OFF_EL_SIZE)
-#define V_LST_POS(addr) V_DPTR(addr + OFF_LST_POS)
-#define V_LST_LEN(addr) V_DPTR(addr + OFF_LST_LEN)
-#define V_LST_BDAT(addr) V_BPTR(addr + OFF_LST_DAT)
-#define V_LST_WDAT(addr) V_WPTR(addr + OFF_LST_DAT)
-#define V_LST_DDAT(addr) V_DPTR(addr + OFF_LST_DAT)
-#define V_LST_QDAT(addr) V_QPTR(addr + OFF_LST_DAT)
+#define Ve_ELSIZE(addr) Ve_BPTR(addr + OFF_EL_SIZE)
+#define Ve_LST_POS(addr) Ve_DPTR(addr + OFF_LST_POS)
+#define Ve_LST_LEN(addr) Ve_DPTR(addr + OFF_LST_LEN)
+#define Ve_LST_BDAT(addr) Ve_BPTR(addr + OFF_LST_DAT)
+#define Ve_LST_WDAT(addr) Ve_WPTR(addr + OFF_LST_DAT)
+#define Ve_LST_DDAT(addr) Ve_DPTR(addr + OFF_LST_DAT)
+#define Ve_LST_QDAT(addr) Ve_QPTR(addr + OFF_LST_DAT)
 
 #define SIZE_LST_OB  OFF_LST_DAT
 
@@ -41,7 +41,7 @@
  * @return: Status of the operation.
  */
 Ve_Err 
-v_make_list_object( VeObject **ob, 
+Ve_CreateListObject(VeObject **ob, 
                     u8 type, 
                     u32 len, 
                     u8 *d_ptr);
@@ -50,14 +50,14 @@ v_make_list_object( VeObject **ob,
  * Expand the list length by 1, if the maximum 
  * allocated length is reached, a new list with 
  * extra space will be allocated.
- * Not to be mistaken with v_list_push, the 
+ * Not to be mistaken with Ve_ListPush, the 
  * latter is implemented using this method.
  * @param ob: The list object to be expanded.
  * @param addr: The address of the expanded element.
  * @return: Status of the operation.
  */
 Ve_Err 
-v_list_expand(VeObject *ob, u8 **addr);
+Ve_ListExpand(VeObject *ob, u8 **addr);
 
 /**
  * Push a new element to a list of any type.
@@ -66,7 +66,7 @@ v_list_expand(VeObject *ob, u8 **addr);
  * @return: Status of the operation.
  */
 Ve_Err 
-v_list_push(VeObject *lst, VeObject *ob);
+Ve_ListPush(VeObject *lst, VeObject *ob);
 
 /**
  * Pop an element from a list of any type, create 
@@ -76,7 +76,7 @@ v_list_push(VeObject *lst, VeObject *ob);
  * @return: Status of the operation.
  */
 Ve_Err 
-v_list_pop(VeObject *lst, VeObject **ob);
+Ve_ListPop(VeObject *lst, VeObject **ob);
 
 /**
  * Concatenate two list of same type into a new list.
@@ -86,6 +86,6 @@ v_list_pop(VeObject *lst, VeObject **ob);
  * @return: Status of the operation.
  */
 Ve_Err 
-v_list_concatenate(VeObject **ob, VeObject *a_lst, VeObject *b_lst);
+Ve_ListConcatenate(VeObject **ob, VeObject *a_lst, VeObject *b_lst);
 
 #endif
