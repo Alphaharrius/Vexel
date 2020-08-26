@@ -18,7 +18,6 @@
  * mixins for pueudo-random number generation 
  * or other cryptography related logic.
  */
-
 #define K_LEN 23
 u64 cry_keys[K_LEN];
 
@@ -33,12 +32,6 @@ u64 cry_keys[K_LEN];
 
 #define NT_STAT_OK(stat) (((NTSTATUS) (stat)) >= 0)
 
-/**
- * If Windows Crypto (Next Generation) API is supported, 
- * predefined handles can be applied, to ensure the handle 
- * for RNG algorithm is avaliable, we will define it here 
- * in case it is not defined.
- */
 #if !defined(BCRYPT_RNG_ALG_HANDLE)
 #define BCRYPT_RNG_ALG_HANDLE (BCRYPT_ALG_HANDLE) 0x00000081
 #endif
@@ -216,9 +209,5 @@ int main(void) {
   u64 x;
   Interface_SysGetRandomBytes(Ve_BPTR(&x), SIZE_64);
   printf("%llx\n", x);
-
-  for (u8 i = 0; i < K_LEN; i++) {
-    printf("%llx\n", cry_keys[i]);
-  }
 
 }
