@@ -105,23 +105,21 @@ Ve_InitializeHeap(u64 heap_size,
    * Offset the base address of allocable 
    * memory by the pointer table byte size.
    */
-  Ve_Heap.base_addr = heap_addr + table_size;
-  /**
-   * The allocation offset is initialized 
-   * to the base address.
-   */
-  Ve_Heap.pos_addr = Ve_Heap.base_addr;
-
-  Ve_Heap.top_addr = heap_addr + heap_size - 1;
-
-  Ve_Heap.tot_size = heap_size;
-
-  Ve_Heap.ob_space_size = heap_size - table_size;
-
-  Ve_PointerTable.base = Ve_PTR(heap_addr);
+  u8 *base_addr = heap_addr + table_size;
+  
+  Ve_Heap = (VeHeap) {
+    .base_addr = base_addr,
+    /**
+     * The allocation offset is initialized 
+     * to the base address.
+     */
+    .pos_addr = base_addr,
+    .top_addr = heap_addr + heap_size - 1,
+    .tot_size = heap_size,
+    .ob_space_size = heap_size - table_size
+  };
   
   u32 tot_ptr_cnt = table_size / sizeof(VeObject);
-  Ve_PointerTable.top = Ve_PointerTable.base + tot_ptr_cnt - 1;
 
   /**
    * Initialize the pointer table bytes to value zero as:
@@ -130,12 +128,16 @@ Ve_InitializeHeap(u64 heap_size,
    */
   memset(heap_addr, 0x00, tot_ptr_cnt * sizeof(VeObject));
 
-  /**
-   * The pointer table index 0 is reserved for the null pointer 
-   * of the Vexel runtime, all references to null pointer will 
-   * be pointed to the null pointer index position.
-   */
-  Ve_PointerTable.pos = Ve_PointerTable.base + 1;
+  Ve_PointerTable = (VePointerTable) {
+    .base = Ve_PTR(heap_addr),
+    .top = Ve_PTR(heap_addr) + tot_ptr_cnt - 1,
+    /**
+     * The pointer table index 0 is reserved for the null pointer 
+     * of the Vexel runtime, all references to null pointer will 
+     * be pointed to the null pointer index position.
+     */
+    .pos = Ve_PTR(heap_addr) + 1
+  }
 }
 
 Ve_Err 

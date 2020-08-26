@@ -37,7 +37,7 @@ typedef struct {
  */
 #define Ve_PTR(addr) ((VeObject *) (addr))
 
-struct VeHeap {
+typedef struct {
   /**
    * The starting address of the 
    * heap object space.
@@ -64,13 +64,19 @@ struct VeHeap {
    */
   u64 ob_space_size;
   
-} Ve_Heap;
+} VeHeap;
+
+/**
+ * There will be only one instance 
+ * of heap per vm instance.
+ */
+VeHeap Ve_Heap;
 
 /**
  * The pointer table for accessing 
  * all allocated chunks.
  */
-struct VePointerTable {
+typedef struct {
   /**
    * The first pointer of the table, 
    * it should carry the same address 
@@ -88,7 +94,13 @@ struct VePointerTable {
    */
   VeObject *top;
 
-} Ve_PointerTable;
+} VePointerTable;
+
+/**
+ * There will be only one instance of 
+ * pointer table per vm instance.
+ */
+VePointerTable Ve_PointerTable;
 
 /**
  * A macro for retrieving the global null pointer.
