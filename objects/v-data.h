@@ -19,8 +19,8 @@
 #define V_DDAT(addr) V_DPTR(addr + OFF_DAT)
 #define V_QDAT(addr) V_QPTR(addr + OFF_DAT)
 
-v_err 
-v_make_data_object( v_object **ob, 
+Ve_Err 
+v_make_data_object( VeObject **ob, 
                     u8 type, 
                     u64 dat);
 

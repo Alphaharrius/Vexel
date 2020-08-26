@@ -30,17 +30,17 @@ typedef struct {
    */
   u64 size;
 
-} v_object;
+} VeObject;
 
 /**
  * Cast an address into a pointer object.
  */
-#define V_PTR(addr) ((v_object *) (addr))
+#define Ve_PTR(addr) ((VeObject *) (addr))
 
 /**
  * A macro for retrieving the global null pointer.
  */
-#define V_NULL_PTR V_PTR(v_heap.base_addr)
+#define Ve_NULLPTR Ve_PTR(v_heap.base_addr)
 
 struct v_heap_object {
   /**
@@ -77,18 +77,18 @@ struct v_heap_object {
      * The first pointer of the table, 
      * it should carry the same address 
      * of the heap allocation, but of 
-     * v_object type.
+     * VeObject type.
      */
-    v_object *base;
+    VeObject *base;
     /**
      * The latest avaliable pointer for 
      * a new allocation.
      */
-    v_object *pos;
+    VeObject *pos;
     /**
      * The last pointer in the pointer table.
      */
-    v_object *top;
+    VeObject *top;
 
   } table;
   
@@ -101,7 +101,7 @@ struct v_heap_object {
  *                        which stores the pointer index 
  *                        to address mapping table.
  */
-void v_initialize_heap(u64 heap_size, u64 table_size);
+void Ve_InitializeHeap(u64 heap_size, u64 table_size);
 
 /**
  * This method assigns the pointer to the address of the allocated bytes.
@@ -109,7 +109,7 @@ void v_initialize_heap(u64 heap_size, u64 table_size);
  * @param byte_size: The byte size to be allocated, no larger than block size.
  * @return: The status of the operation.
  */
-v_err v_heap_allocate(v_object **ptr, u64 size);
+Ve_Err Ve_HeapAllocate(VeObject **ptr, u64 size);
 
 /**
  * This method reallocates the memory indicated by the pointer 
@@ -121,7 +121,7 @@ v_err v_heap_allocate(v_object **ptr, u64 size);
  * @param byte_size: The byte size to be allocated, no larger than block size.
  * @return: The status of the operation.
  */
-v_err v_heap_reallocate(v_object *ptr, u64 size);
+Ve_Err Ve_HeapReallocate(VeObject *ptr, u64 size);
 
 /**
  * This method clones the object indicated by the 
@@ -132,7 +132,7 @@ v_err v_heap_reallocate(v_object *ptr, u64 size);
  * @param src: The source pointer.
  * @return: The status of the operation.
  */
-v_err vm_heap_clone(v_object **des, v_object *src);
+Ve_Err Internal_HeapClone(VeObject **des, VeObject *src);
 
 /**
  * This method free the memory indicated by the pointer, 
@@ -141,7 +141,7 @@ v_err vm_heap_clone(v_object **des, v_object *src);
  * @param ptr: The pointer associated to the allocated memory.
  * @return: The status of the operation.
  */
-v_err v_heap_free(v_object *ptr);
+Ve_Err v_heap_free(VeObject *ptr);
 
 /**
  * This method is a safe check if a pointer is null. 
@@ -153,6 +153,6 @@ v_err v_heap_free(v_object *ptr);
  * @param: The pointer to be checked.
  * @return: Boolean value of the checking.
  */
-u8 v_is_null(v_object *ptr);
+u8 Ve_IsNull(VeObject *ptr);
 
 #endif

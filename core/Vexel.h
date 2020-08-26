@@ -12,7 +12,8 @@
 #include "v-log.h"
 #include "v-error.h"
 #include "v-heap.h"
-#include "v-crypto.h"
+
+#include "../crypto/v-crypt.h"
 
 #include "../objects/v-object.h"
 #include "../objects/v-data.h"

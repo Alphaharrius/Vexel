@@ -9,10 +9,10 @@
 #define NULL ((void *) 0)
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #define WINDOWS
 #include <Windows.h>
-#elif __unix__
+#elif defined(__unix__)
 #define UNIX
 #include <sys/mman.h>
 #endif

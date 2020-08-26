@@ -16,8 +16,8 @@
 #define LST_LEN_GROW(tot_len) \
   tot_len = (tot_len << 1) - (tot_len >> 1);
 
-v_err 
-v_make_list_object( v_object **ob, 
+Ve_Err 
+v_make_list_object( VeObject **ob, 
                     u8 type, 
                     u32 len, 
                     u8 *d_ptr)
@@ -30,7 +30,7 @@ v_make_list_object( v_object **ob,
    * arrays can be allocated.
    */
   if (len > LST_MAX_LEN) {
-    return V_ERR_LST_MAX_LEN;
+    return ERR_LST_MAX_LEN;
   }
 
   u8 el_size;
@@ -56,7 +56,7 @@ v_make_list_object( v_object **ob,
      * for debug purpose only as the compiler 
      * will not generate invalid types.
      */
-    default: return V_ERR_API_INV_CALL;
+    default: return ERR_API_INV_CALL;
   }
 
   /**
@@ -74,14 +74,14 @@ v_make_list_object( v_object **ob,
     LST_LEN_GROW(tot_len);
   }
 
-  v_err stat;
+  Ve_Err stat;
   u64 ob_size = SIZE_LST_OB + el_size * tot_len;
 
   if (ob_size > v_heap.ob_space_size) {
-    return V_ERR_HEAP_OUT_OF_MEM;
+    return ERR_HEAP_OUT_OF_MEM;
   }
 
-  stat = v_heap_allocate(ob, ob_size);
+  stat = Ve_HeapAllocate(ob, ob_size);
 
   if (IS_ERR(stat)) {
     return stat;
@@ -100,16 +100,16 @@ v_make_list_object( v_object **ob,
   return stat;
 }
 
-v_err 
-v_list_expand(v_object *ob,
+Ve_Err 
+v_list_expand(VeObject *ob,
               u8 **addr)
 {
   /**
    * Check if the list pointer is the global null 
    * pointer, which takes the base position.
    */
-  if (v_is_null(ob)) {
-    return V_ERR_OB_NULL;
+  if (Ve_IsNull(ob)) {
+    return ERR_OB_NULL;
   }
 
   u8 *lst_addr = ob->mem_addr;
@@ -117,7 +117,7 @@ v_list_expand(v_object *ob,
    * Check if the pointer is type of list.
    */
   if (!V_IS_LST(lst_addr)) {
-    return V_ERR_OB_NOT_LST;
+    return ERR_OB_NOT_LST;
   }
 
   u8 el_size = *V_EL_SIZE(lst_addr);
@@ -140,7 +140,7 @@ v_list_expand(v_object *ob,
     LST_LEN_GROW(tot_len);
     u64 new_size = SIZE_LST_OB + tot_len * el_size;
 
-    v_err stat = v_heap_reallocate(ob, new_size);
+    Ve_Err stat = Ve_HeapReallocate(ob, new_size);
     if (IS_ERR(stat)) {
       return stat;
     }
@@ -164,7 +164,7 @@ v_list_expand(v_object *ob,
    */
   *addr = V_LST_BDAT(lst_addr) + (*len)++ * el_size;
 
-  return V_ERR_NONE;
+  return ERR_NONE;
 }
 
 static inline u8 
@@ -184,9 +184,9 @@ match_list_type(u8 ob_type, u8 type)
   }
 }
 
-v_err 
-v_list_push(v_object *lst, 
-            v_object *ob)
+Ve_Err 
+v_list_push(VeObject *lst, 
+            VeObject *ob)
 {
   /**
    * Validate the element type to be pushed to 
@@ -203,10 +203,10 @@ v_list_push(v_object *lst,
    * type as the list.
    */
   if (!match_list_type(lst_type, *V_TYPE(ob_addr))) {
-    return V_ERR_OB_TYP_UNMATCH;
+    return ERR_OB_TYP_UNMATCH;
   }
 
-  v_err stat;
+  Ve_Err stat;
   u8 *el_addr;
   /**
    * Attempt to expand the list by 1.
@@ -252,22 +252,22 @@ v_list_push(v_object *lst,
   return stat;
 }
 
-v_err 
-v_list_pop( v_object *lst, 
-            v_object **ob) 
+Ve_Err 
+v_list_pop( VeObject *lst, 
+            VeObject **ob) 
 {
-  if (v_is_null(lst)) {
-    return V_ERR_OB_NULL;
+  if (Ve_IsNull(lst)) {
+    return ERR_OB_NULL;
   }
 
   u8 *lst_addr = lst->mem_addr;
 
   if (!V_IS_LST(lst_addr)) {
-    return V_ERR_OB_NOT_LST;
+    return ERR_OB_NOT_LST;
   }
 
   if (*V_LST_POS(lst_addr) == 0) {
-    *ob = V_NULL_PTR;
+    *ob = Ve_NULLPTR;
   }
   
   /**
@@ -309,8 +309,8 @@ v_list_pop( v_object *lst,
      * pointer, which is also the popped 
      * pointer, return directly.
      */
-    *ob = V_PTR(*(V_LST_QDAT(lst_addr) + new_len));
-    return V_ERR_NONE;
+    *ob = Ve_PTR(*(V_LST_QDAT(lst_addr) + new_len));
+    return ERR_NONE;
 
     default: break;
   }
@@ -323,15 +323,15 @@ v_list_pop( v_object *lst,
   return v_make_data_object(ob, type, dat);
 }
 
-v_err 
-v_list_concatenate( v_object **ob, 
-                    v_object *a_lst, 
-                    v_object *b_lst)
+Ve_Err 
+v_list_concatenate( VeObject **ob, 
+                    VeObject *a_lst, 
+                    VeObject *b_lst)
 {
-  if (v_is_null(a_lst) || 
-      v_is_null(b_lst)) {
+  if (Ve_IsNull(a_lst) || 
+      Ve_IsNull(b_lst)) {
 
-    return V_ERR_OB_NULL;
+    return ERR_OB_NULL;
   }
 
   u8 *a_addr = a_lst->mem_addr;
@@ -346,10 +346,10 @@ v_list_concatenate( v_object **ob,
        */
       a_type != *V_TYPE(b_addr)) {
 
-    return V_ERR_API_INV_CALL;
+    return ERR_API_INV_CALL;
   }
 
-  v_err stat;
+  Ve_Err stat;
   u32 a_len = *V_LST_POS(a_addr);
   u32 b_len = *V_LST_POS(b_addr);
 
@@ -365,14 +365,14 @@ v_list_concatenate( v_object **ob,
    * If A is empty, clone B as the new list.
    */
   else if (a_len == 0) {
-    return vm_heap_clone(ob, b_lst);
+    return Internal_HeapClone(ob, b_lst);
   }
 
   /**
    * If B is empty, clone A as the new list.
    */
   else if (b_len == 0) {
-    return vm_heap_clone(ob, a_lst);
+    return Internal_HeapClone(ob, a_lst);
   }
 
   /**

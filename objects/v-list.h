@@ -40,8 +40,8 @@
  * @param len: The length of the list to be allocated.
  * @return: Status of the operation.
  */
-v_err 
-v_make_list_object( v_object **ob, 
+Ve_Err 
+v_make_list_object( VeObject **ob, 
                     u8 type, 
                     u32 len, 
                     u8 *d_ptr);
@@ -56,8 +56,8 @@ v_make_list_object( v_object **ob,
  * @param addr: The address of the expanded element.
  * @return: Status of the operation.
  */
-v_err 
-v_list_expand(v_object *ob, u8 **addr);
+Ve_Err 
+v_list_expand(VeObject *ob, u8 **addr);
 
 /**
  * Push a new element to a list of any type.
@@ -65,8 +65,8 @@ v_list_expand(v_object *ob, u8 **addr);
  * @param ob: The element object to be pushed.
  * @return: Status of the operation.
  */
-v_err 
-v_list_push(v_object *lst, v_object *ob);
+Ve_Err 
+v_list_push(VeObject *lst, VeObject *ob);
 
 /**
  * Pop an element from a list of any type, create 
@@ -75,8 +75,8 @@ v_list_push(v_object *lst, v_object *ob);
  * @param ob: The element object being popped.
  * @return: Status of the operation.
  */
-v_err 
-v_list_pop(v_object *lst, v_object **ob);
+Ve_Err 
+v_list_pop(VeObject *lst, VeObject **ob);
 
 /**
  * Concatenate two list of same type into a new list.
@@ -85,7 +85,7 @@ v_list_pop(v_object *lst, v_object **ob);
  * @param b_lst: The object of the tail list.
  * @return: Status of the operation.
  */
-v_err 
-v_list_concatenate(v_object **ob, v_object *a_lst, v_object *b_lst);
+Ve_Err 
+v_list_concatenate(VeObject **ob, VeObject *a_lst, VeObject *b_lst);
 
 #endif

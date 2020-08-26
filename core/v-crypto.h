@@ -21,7 +21,7 @@ void v_initialize_crypto(void);
 
 /**
  * Hash a byte list with a given length into 64 bit 
- * hash by a byte-wise add-rotate-subsitute-xor process.
+ * hash by a byte-wise AMSX process.
  * This hashing process is enhanced by native crypto 
  * random key generation, thus the hash code generation 
  * output is unique per vm process, and crypto-safe.

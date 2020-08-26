@@ -60,7 +60,7 @@ static inline void *
  * host system's allocation utilities, currently 
  * supports Windows and Unix based systems.
  */
-_system_allocate_memory(u64 byte_size)
+system_allocate_memory(u64 byte_size)
 {
 #ifdef WINDOWS
   return VirtualAlloc((LPVOID) NULL, 
@@ -72,7 +72,7 @@ _system_allocate_memory(u64 byte_size)
 }
 
 static inline u32
-_system_free_memory(void *mem_addr)
+system_free_memory(void *mem_addr)
 {
 #ifdef WINDOWS
   return (u32) VirtualFree((LPVOID) mem_addr, 
@@ -82,7 +82,7 @@ _system_free_memory(void *mem_addr)
 }
 
 void 
-v_initialize_heap(u64 heap_size, 
+Ve_InitializeHeap(u64 heap_size, 
                   u64 table_size)
 {
   /**
@@ -95,7 +95,7 @@ v_initialize_heap(u64 heap_size,
         smaller than 50% of the heap byte size");
   }
 
-  u8 *heap_addr = _system_allocate_memory(heap_size);
+  u8 *heap_addr = system_allocate_memory(heap_size);
   /**
    * Terminates the process if the heap allocation failed.
    */
@@ -122,9 +122,9 @@ v_initialize_heap(u64 heap_size,
   
   struct _table_object *table = &v_heap.table;
 
-  table->base = V_PTR(heap_addr);
+  table->base = Ve_PTR(heap_addr);
   
-  u32 tot_ptr_cnt = table_size / sizeof(v_object);
+  u32 tot_ptr_cnt = table_size / sizeof(VeObject);
   table->top = table->base + tot_ptr_cnt - 1;
 
   /**
@@ -132,7 +132,7 @@ v_initialize_heap(u64 heap_size,
    *  0 => bytesize = 0,
    *  0 => mem_addr = 0 = ((void *) 0) = NULL
    */
-  memset(heap_addr, 0x00, tot_ptr_cnt * sizeof(v_object));
+  memset(heap_addr, 0x00, tot_ptr_cnt * sizeof(VeObject));
 
   /**
    * The pointer table index 0 is reserved for the null pointer 
@@ -142,18 +142,18 @@ v_initialize_heap(u64 heap_size,
   table->pos = table->base + 1;
 }
 
-v_err 
-v_heap_allocate(v_object **ptr, u64 size) 
+Ve_Err 
+Ve_HeapAllocate(VeObject **ptr, u64 size) 
 {
   /**
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
   if (size > v_heap.ob_space_size) {
-    return V_ERR_HEAP_OUT_OF_MEM;
+    return ERR_HEAP_OUT_OF_MEM;
   }
 
-  v_object *p;
+  VeObject *p;
   struct _table_object *table = &v_heap.table;
   /**
    * Return the next avaliable pointer if offset of 
@@ -168,14 +168,14 @@ v_heap_allocate(v_object **ptr, u64 size)
    */
   else {
     p = table->base + 1;
-    v_object *top = table->top;
+    VeObject *top = table->top;
     while (p->mem_addr != NULL) {
       /**
        * Throw exception if the table does not 
        * have any unused pointer positions.
        */
       if (++p == table->top) {
-        return V_ERR_HEAP_NO_IDX;
+        return ERR_HEAP_NO_IDX;
       }
     }
   }
@@ -190,22 +190,22 @@ v_heap_allocate(v_object **ptr, u64 size)
     v_heap.pos_addr += size;
     *ptr = p;
 
-    return V_ERR_NONE;
+    return ERR_NONE;
   } 
   else {
-    return V_ERR_HEAP_OUT_OF_MEM;
+    return ERR_HEAP_OUT_OF_MEM;
   }
 }
 
-v_err 
-v_heap_reallocate(v_object *ptr, u64 size) 
+Ve_Err 
+Ve_HeapReallocate(VeObject *ptr, u64 size) 
 {
   /**
    * Allocation byte size is not allowed to be 
    * greater than the total avaliable byte size.
    */
   if (size > v_heap.ob_space_size) {
-    return V_ERR_HEAP_OUT_OF_MEM;
+    return ERR_HEAP_OUT_OF_MEM;
   }
 
   /**
@@ -219,7 +219,7 @@ v_heap_reallocate(v_object *ptr, u64 size)
     ptr->size = size;
     v_heap.pos_addr += size;
   } else {
-    return V_ERR_HEAP_OUT_OF_MEM;
+    return ERR_HEAP_OUT_OF_MEM;
   }
 
   if (prior_size <= size) {
@@ -232,14 +232,14 @@ v_heap_reallocate(v_object *ptr, u64 size)
     memcpy(ptr->mem_addr, prior_addr, size);
   }
 
-  return V_ERR_NONE;
+  return ERR_NONE;
 }
 
-v_err 
-vm_heap_clone(v_object **des, v_object *src)
+Ve_Err 
+Internal_HeapClone(VeObject **des, VeObject *src)
 {
-  v_err stat;
-  stat = v_heap_allocate(des, src->size);
+  Ve_Err stat;
+  stat = Ve_HeapAllocate(des, src->size);
 
   if (IS_ERR(stat)) {
     return stat;
@@ -250,9 +250,9 @@ vm_heap_clone(v_object **des, v_object *src)
   return stat;
 }
 
-u8 v_is_null(v_object *ptr)
+u8 Ve_IsNull(VeObject *ptr)
 {
-  if (ptr == V_PTR(v_heap.base_addr) || !ptr->mem_addr) {
+  if (ptr == Ve_PTR(v_heap.base_addr) || !ptr->mem_addr) {
     return TRUE;
   }
 

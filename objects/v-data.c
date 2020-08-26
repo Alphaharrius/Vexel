@@ -5,17 +5,17 @@
  * v-data.c
  */
 
-v_err 
-v_make_data_object( v_object **ob, 
+Ve_Err 
+v_make_data_object( VeObject **ob, 
                     u8 type, 
                     u64 dat) 
 {
   if (V_NOT_DAT & type) {
-    return V_ERR_API_INV_CALL;
+    return ERR_API_INV_CALL;
   }
 
-  v_err stat;
-  stat = v_heap_allocate(ob, SIZE_DAT_OB);
+  Ve_Err stat;
+  stat = Ve_HeapAllocate(ob, SIZE_DAT_OB);
   if (IS_ERR(stat)) {
     return stat;
   }
