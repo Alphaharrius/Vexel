@@ -59,6 +59,11 @@ windows_initialize_crypt(void)
 {
 #if defined(__BCRYPT_H__)
 
+  /**
+   * If Windows Crypto (Next Generation) API is supported, 
+   * initialization of the crypto environment is not required 
+   * as predefined handle is provided.
+   */
   return TRUE;
 
 #elif defined(__WINCRYPT_H__)
