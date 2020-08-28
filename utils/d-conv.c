@@ -226,7 +226,12 @@ Util_QuickDoubleConvert(u8 *str, double val)
   /**
    * Generate the integer part with 20 places.
    */
-  str += Util_QuickUnsignedConvert(str, hi_di, 20, 0);
+  if (hi_di) {
+    str += Util_QuickUnsignedConvert(str, hi_di, 20, 0);
+  } 
+  else {
+    *str++ = '0';
+  }
   /**
    * Place in the floating point.
    */
