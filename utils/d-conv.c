@@ -1,4 +1,5 @@
 #include "d-conv.h"
+#include <stdio.h>
 /**
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
@@ -80,8 +81,11 @@ generate_lower_digits(u64 *lo_di, u64 d_pos)
    * This process is similar to a 
    * hand written division approach 
    * but by the power of 2.
+   * Generation for digit beyond 18 
+   * is trivial and prone to inaccurate 
+   * conversion.
    */
-  while (rmd) {
+  while (rmd != 0 && i < 18) {
 
     /**
      * Increase the dividen a power of 10 
