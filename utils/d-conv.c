@@ -4,286 +4,177 @@
  * Copyright (c) 2019, 2020, Alphaharrius. All rights reserved.
  * 
  * d-conv.c
- * This file implements the QuickDoubleConvert algorithm, 
- * this algorithm separates the integer and decimal parts 
- * to perform digit generation separately, it is then passed 
- * to the QuickUnsignedConvert for string generation.
- * 
- * Quick Double Convert Algorithm
- * 
- *  1.  If equals special values ( inf, -inf, nan, 0.0, -0.0 ), return.
- * 
- *  2.  Extract the integer and decimal part from the double qword separately.
- *        3.625 -> 0x400D000000000000
- *        integer => 11
- *        decimal => 101
- * 
- *  3.  Convert the integer part with QuickUnsignedConvert and push to string.
- * 
- *  4.  We will treat the decimal places of the double as an u64 integer, 
- *      the value will be incremented per bit position of the mantissa.
- *        mant[1] = 1 => 500000000000000000ULL
- *        mant[2] = 0 => 0UUL
- *        mant[3] = 1 => 125000000000000000ULL
- *        result      => 625000000000000000ULL
- *      The u64 value of each corresponding bit position is computed using 
- *      a shift and mod approach, for detail place see code comments.
- * 
- *  5.  The computation of decimal places induces significant overhead during 
- *      the digit generation of multiple bit positions, which occurs very frequently as 
- *      most double values are not of perfect values like ( 0.5, 0.25, 0.625 ), 
- *      but represented with a lot of mantissa bits.
- *      Therefore, the algorithm replaced the need for the digit generation for bit position 
- *      greater or equal to 20 ( double value have at max 52 bits for mantissa ), with 
- *      precalculated values, the amount of precomputated data is in favor to reduce memory 
- *      footprint of the method.
- *      The power 10 values for digit generations are also being precalculated to 
- *      remove the need for expensive big number divisions.
+ * This file implements the QuickDoubleConvert algorithm for fast 
+ * conversion of double value to printable string, 
  */
 
-/**
- * The precalculated values for the digit generation result for bit position 
- * greater or equal to 20, stored in u64 hexadecimal format.
- */
-static u64 SIG_PRECMP[] = { 0xDE0B6B3A76,   0x6F05B59D3B,   0x3782DACE9E,   0x1BC16D674F, 
-                            0xDE0B6B3A8,    0x6F05B59D4,    0x3782DACEA,    0x1BC16D675, 
-                            0xDE0B6B3B,     0x6F05B59E,     0x3782DACF,     0x1BC16D68, 
-                            0xDE0B6B4,      0x6F05B5A,      0x3782DAD,      0x1BC16D7, 
-                            0xDE0B6C,       0x6F05B6,       0x3782DB,       0x1BC16E, 
-                            0xDE0B7,        0x6F05C,        0x3782E,        0x1BC17, 
-                            0xDE0C,         0x6F06,         0x3783,         0x1BC2, 
-                            0xDE1,          0x6F1,          0x379,          0x1BD, 
-                            0xDF };
+#define D_SGN(h) (u8) (h & (1ULL << 63))
+#define D_EXP(h) (u16) ((h & (0x7FFULL << 52)) >> 52)
+#define D_MAN(h) (u64) (h & (~0ULL >> 12) | (1ULL << 52))
 
-/**
- * The precalculated values for the power 10 big integers, starting from 1e17
- */
-static u64 POW10_PRECMP[] = { 0x16345785D8A0000,  0x2386F26FC10000,   0x38D7EA4C68000, 
-                              0x5AF3107A4000,     0x9184E72A000,      0xE8D4A51000, 
-                              0x174876E800,       0x2540BE400,        0x3B9ACA00, 
-                              0x5F5E100,          0x989680,           0xF4240, 
-                              0x186A0,            0x2710,             0x3E8, 
-                              0x64,               0xA,                0x1 };
+#define LO_MSK (~0ULL >> 32)
+#define HI_POS (1ULL << 52)
+#define U64_TOP (1ULL << 63)
 
-static inline void 
-/**
- * The digit generation algorithm 
- * involves a shift & mod approach.
- */
-generate_lower_digits(u64 *lo_di, u64 d_pos)
+typedef struct { int exp; u64 man; } Double;
+
+static Double POWER_10[] = {
+  { .exp = 3, .man = 0x14000000000000 }, { .exp = 6, .man = 0x19000000000000 }, 
+  { .exp = 9, .man = 0x1f400000000000 }, { .exp = 13, .man = 0x13880000000000 }, 
+  { .exp = 16, .man = 0x186a0000000000 }, { .exp = 19, .man = 0x1e848000000000 }, 
+  { .exp = 23, .man = 0x1312d000000000 }, { .exp = 26, .man = 0x17d78400000000 }, 
+  { .exp = 29, .man = 0x1dcd6500000000 }, { .exp = 33, .man = 0x12a05f20000000 }, 
+  { .exp = 36, .man = 0x174876e8000000 }, { .exp = 39, .man = 0x1d1a94a2000000 }, 
+  { .exp = 43, .man = 0x12309ce5400000 }, { .exp = 46, .man = 0x16bcc41e900000 }, 
+  { .exp = 49, .man = 0x1c6bf526340000 }, { .exp = 53, .man = 0x11c37937e08000 }, 
+  { .exp = 56, .man = 0x16345785d8a000 }, { .exp = 59, .man = 0x1bc16d674ec800 }, 
+  { .exp = 63, .man = 0x1158e460913d00 }, { .exp = 66, .man = 0x15af1d78b58c40 }, 
+  { .exp = 69, .man = 0x1b1ae4d6e2ef50 }, { .exp = 73, .man = 0x10f0cf064dd592 }, 
+  { .exp = 76, .man = 0x152d02c7e14af6 }, { .exp = 79, .man = 0x1a784379d99db4 }, 
+  { .exp = 83, .man = 0x108b2a2c280290 }, { .exp = 86, .man = 0x14adf4b7320334 }, 
+  { .exp = 89, .man = 0x19d971e4fe8401 }, { .exp = 93, .man = 0x1027e72f1f1281 }, 
+  { .exp = 96, .man = 0x1431e0fae6d721 }, { .exp = 99, .man = 0x193e5939a08ce9 }, 
+  { .exp = 102, .man = 0x1f8def8808b023 }, { .exp = 106, .man = 0x13b8b5b5056e16 }, 
+  { .exp = 109, .man = 0x18a6e32246c99c }, { .exp = 112, .man = 0x1ed09bead87c03 }, 
+  { .exp = 116, .man = 0x13426172c74d82 }, { .exp = 119, .man = 0x1812f9cf7920e2 }, 
+  { .exp = 122, .man = 0x1e17b84357691a }, { .exp = 126, .man = 0x12ced32a16a1b0 }, 
+  { .exp = 129, .man = 0x178287f49c4a1c }, { .exp = 132, .man = 0x1d6329f1c35ca3 }, 
+  { .exp = 136, .man = 0x125dfa371a19e6 }, { .exp = 139, .man = 0x16f578c4e0a060 }, 
+  { .exp = 142, .man = 0x1cb2d6f618c878 }, { .exp = 146, .man = 0x11efc659cf7d4b }, 
+  { .exp = 149, .man = 0x166bb7f0435c9e }, { .exp = 152, .man = 0x1c06a5ec5433c6 }, 
+  { .exp = 156, .man = 0x118427b3b4a05c }, { .exp = 159, .man = 0x15e531a0a1c873 }, 
+  { .exp = 162, .man = 0x1b5e7e08ca3a90 }, { .exp = 166, .man = 0x111b0ec57e649a }, 
+  { .exp = 169, .man = 0x1561d276ddfdc0 }, { .exp = 172, .man = 0x1aba4714957d30 }, 
+  { .exp = 176, .man = 0x10b46c6cdd6e3e }, { .exp = 179, .man = 0x14e1878814c9ce }, 
+  { .exp = 182, .man = 0x1a19e96a19fc42 }, { .exp = 186, .man = 0x105031e2503da9 }, 
+  { .exp = 189, .man = 0x14643e5ae44d13 }, { .exp = 192, .man = 0x197d4df19d6058 }, 
+  { .exp = 195, .man = 0x1fdca16e04b86e }, { .exp = 199, .man = 0x13e9e4e4c2f345 }, 
+  { .exp = 202, .man = 0x18e45e1df3b016 }, { .exp = 205, .man = 0x1f1d75a5709c1c }, 
+  { .exp = 209, .man = 0x13726987666192 }, { .exp = 212, .man = 0x184f03e93ff9f6 }
+};
+
+static Double INV_POWER_10[] = {
+  { .exp = -4, .man = 0x1999999999999a }, { .exp = -7, .man = 0x147ae147ae147b }, 
+  { .exp = -10, .man = 0x10624dd2f1a9fc }, { .exp = -14, .man = 0x1a36e2eb1c432d }, 
+  { .exp = -17, .man = 0x14f8b588e368f1 }, { .exp = -20, .man = 0x10c6f7a0b5ed8e }, 
+  { .exp = -24, .man = 0x1ad7f29abcaf4a }, { .exp = -27, .man = 0x15798ee2308c3b }, 
+  { .exp = -30, .man = 0x112e0be826d696 }, { .exp = -34, .man = 0x1b7cdfd9d7bdbd }, 
+  { .exp = -37, .man = 0x15fd7fe1796497 }, { .exp = -40, .man = 0x119799812dea12 }, 
+  { .exp = -44, .man = 0x1c25c268497683 }, { .exp = -47, .man = 0x16849b86a12b9c }, 
+  { .exp = -50, .man = 0x1203af9ee75616 }, { .exp = -54, .man = 0x1cd2b297d889bd }, 
+  { .exp = -57, .man = 0x170ef54646d497 }, { .exp = -60, .man = 0x12725dd1d243ac }, 
+  { .exp = -64, .man = 0x1d83c94fb6d2ad }, { .exp = -67, .man = 0x179ca10c924224 }, 
+  { .exp = -70, .man = 0x12e3b40a0e9b50 }, { .exp = -74, .man = 0x1e392010175ee6 }, 
+  { .exp = -77, .man = 0x182db34012b252 }, { .exp = -80, .man = 0x1357c299a88ea8 }, 
+  { .exp = -84, .man = 0x1ef2d0f5da7dda }, { .exp = -87, .man = 0x18c240c4aecb15 }, 
+  { .exp = -90, .man = 0x13ce9a36f23c11 }, { .exp = -94, .man = 0x1fb0f6be50601b }, 
+  { .exp = -97, .man = 0x195a5efea6b349 }, { .exp = -100, .man = 0x14484bfeebc2a1 }, 
+  { .exp = -103, .man = 0x1039d665896881 }, { .exp = -107, .man = 0x19f623d5a8a735 }, 
+  { .exp = -110, .man = 0x14c4e977ba1f5e }, { .exp = -113, .man = 0x109d8792fb4c4b }, 
+  { .exp = -117, .man = 0x1a95a5b7f87a12 }, { .exp = -120, .man = 0x154484932d2e75 }, 
+  { .exp = -123, .man = 0x11039d428a8b91 }, { .exp = -127, .man = 0x1b38fb9daa78e8 }, 
+  { .exp = -130, .man = 0x15c72fb1552d86 }, { .exp = -133, .man = 0x116c262777579e }, 
+  { .exp = -137, .man = 0x1be03d0bf225ca }, { .exp = -140, .man = 0x164cfda3281e3b }, 
+  { .exp = -143, .man = 0x11d7314f534b62 }, { .exp = -147, .man = 0x1c8b821885456a }, 
+  { .exp = -150, .man = 0x16d601ad376abb }, { .exp = -153, .man = 0x1244ce242c5562 }, 
+  { .exp = -157, .man = 0x1d3ae36d13bbd0 }, { .exp = -160, .man = 0x17624f8a762fda }, 
+  { .exp = -163, .man = 0x12b50c6ec4f315 }, { .exp = -167, .man = 0x1dee7a4ad4b822 }, 
+  { .exp = -170, .man = 0x17f1fb6f10934e }, { .exp = -173, .man = 0x1327fc58da0f72 }, 
+  { .exp = -177, .man = 0x1ea6608e29b250 }, { .exp = -180, .man = 0x18851a0b548ea6 }, 
+  { .exp = -183, .man = 0x139dae6f76d885 }, { .exp = -187, .man = 0x1f62b0b257c0d5 }, 
+  { .exp = -190, .man = 0x191bc08eac9a44 }, { .exp = -193, .man = 0x141633a556e1d0 }, 
+  { .exp = -196, .man = 0x1011c2eaabe7da }, { .exp = -200, .man = 0x19b604aaaca62a }, 
+  { .exp = -203, .man = 0x14919d5556eb55 }, { .exp = -206, .man = 0x10747ddddf22aa }, 
+  { .exp = -210, .man = 0x1a53fc9631d110 }, { .exp = -213, .man = 0x150ffd44f4a740 }
+};
+
+static inline Double
+convert(double num)
 {
-  u64 d = 1ULL << d_pos;
-  u64 rmd = 1;
-  u8 i = 0;
-  u8 k_pr = 0;
+  u64 u_val = *(u64 *) &num;
 
-  /**
-   * This process is similar to a 
-   * hand written division approach 
-   * but by the power of 2.
-   * Generation for digit beyond 18 
-   * is trivial and prone to inaccurate 
-   * conversion.
-   */
-  while (rmd != 0 && i < 18) {
-
-    /**
-     * Increase the dividen a power of 10 
-     * as 1 in 1 / 2^pos division is insufficent 
-     * to carry out the division.
-     */
-    rmd *= 10;
-
-    /**
-     * Carry out the division by 2^pos, 
-     * replaced division by bit shifting 
-     * to improve performance.
-     * The value k is the generated digit 
-     * from the current iteration.
-     */
-    u64 k = rmd >> d_pos;
-
-    if (k) {
-
-      *lo_di += k * POW10_PRECMP[i];
-    }
-
-    /**
-     * Calculate the remainder of the 1 / 2^pos division, 
-     * this loop will continue until the remainder is 0.
-     */
-    rmd %= d;
-
-    i++;
-  }
+  return (Double) {
+    .exp = D_EXP(u_val) - 1023,
+    .man = D_MAN(u_val)
+  };
 }
 
-#define D_2U64(d) (*(u64 *) &d) /** Convert double to u64 */
-#define D_SIGN(h) (u8) ((h & (1ULL << 63)) >> 63) /** Extract sign */
-#define D_EXPO(h) (u16) ((h & (0x7FFULL << 52)) >> 52) /** Extract exponent */
-#define D_MANT(h) (u64) ((h << 11) | (1ULL << 63)) /** Extract mantissa */
+static inline Double
+multiply(Double *a, Double *b)
+{
+  u64 a_hi = a->man >> 32;
+  u64 a_lo = a->man & LO_MSK;
+  u64 b_hi = b->man >> 32;
+  u64 b_lo = b->man & LO_MSK;
+
+  u64 man = a_hi * b_hi;
+  int man_ov = 0;
+  if (man & (1ULL << 41)) {
+    man_ov = 1;
+  }
+
+  // printf("man: %llx, %d\n", man, man_ov);
+
+  u64 lo_lo = a_lo * b_lo;
+
+  u64 tmp = a_hi * b_lo + a_lo * b_hi + (lo_lo >> 32);
+
+  man += (tmp >> 32);
+
+  return (Double) {
+    .exp = a->exp + b->exp + man_ov,
+    .man = man
+  };
+}
+
+static inline int
+calculate_power(int exp)
+{
+  Double d_log = (Double) { .exp = -2, .man = 0x134413509F79FF };
+  Double d_exp = convert((double) exp);
+
+  // printf("EXP( %d, %llx )\n", d_exp.exp, d_exp.man);
+
+  Double d_pow = multiply(&d_exp, &d_log);
+
+  // printf("POW( %d, %llx )\n", d_pow.exp, d_pow.man);
+
+  u64 man = d_pow.man;
+  while (!(man & U64_TOP)) { man <<= 1; }
+
+  return (int) (man >> (63 - d_pow.exp)) + 1;
+}
 
 u8
-Util_QuickDoubleConvert(u8 *str, double val)
+Util_QuickDoubleConvert(u8 *str, double num)
 {
-  u8 *str_base = str;
+  Double d_num = convert(num);
+  Double d_pow;
+  int pow;
 
-  u64 u_val = D_2U64(val);
-
-  if (D_SIGN(u_val)) {
-    *str++ = '-';
-  }
-
-  u16 expo = D_EXPO(u_val);
-  /**
-   * IEEE-754 defines a value to be special 
-   * if its exponent equals 0x7FF.
-   */
-  if (expo == 0x7FF) {
-
-    /**
-     * IEEE-754 defines a special value to 
-     * be "nan" (Not a number) if its mantissa 
-     * is not zero.
-     */
-    if ((~0ULL >> 12) & u_val) {
-      
-      /**
-       * The "nan" value does not have a sign.
-       */
-      memcpy(str_base, "nan", 3);
-
-      return 3;
+  if (52 > d_num.exp) {
+    pow = calculate_power(52 - d_num.exp);
+    if (pow > 64) {
+      d_pow = POWER_10[63];
+      pow -= 64;
+    } else {
+      d_pow = POWER_10[pow - 1];
     }
-    /**
-     * IEEE-754 defines a special value to 
-     * be "inf" (Not a number) if its mantissa 
-     * is zero.
-     */
-    else {
-
-      /**
-       * The "inf" values does carries a sign.
-       */
-      memcpy(str, "inf", 3);
-      str += 3;
-
-      return (u8) (str - str_base);
+  } else if (52 < d_num.exp) {
+    pow = calculate_power(d_num.exp - 52);
+    if (pow > 64) {
+      d_pow = INV_POWER_10[63];
+      pow = -pow + 64;
+    } else {
+      d_pow = INV_POWER_10[pow - 1];
     }
   }
 
-  /**
-   * The floating point offset of a IEEE-754 
-   * double is calculated by subtracting the 
-   * exponent by 1023.
-   */
-  int f_pos = (int) expo - 1023;
+  Double prod = multiply(&d_num, &d_pow);
+  u64 man = prod.man;
+  while (!(man & U64_TOP)) { man <<= 1; }
 
-  u64 mant = D_MANT(u_val);
-  /**
-   * The value is zero if it have zero valued mantissa.
-   */
-  if (!(~(1ULL << 63) & u_val)) {
+  u64 di = man >> (63 - prod.exp);
 
-    /**
-     * The zero value does carries a sign.
-     */
-    memcpy(str, "0.0", 3);
-    str += 3;
-
-    return str - str_base;
-  }
-
-  u64 hi_di = 0;
-
-  /**
-   * If floating point offset is positive, 
-   * this value carries a integer part.
-   */
-  if (f_pos >= 0) {
-
-    f_pos++;
-
-    /**
-     * Extract integer part by shifting off the decimal places.
-     */
-    hi_di = (mant & ~(~0ULL >> f_pos)) >> (64 - f_pos);
-    /**
-     * Extract the decimal part by shifting off the integer part.
-     */
-    mant <<= f_pos;
-  }
-
-  /**
-   * If floating point offset is negative, 
-   * this value does not carry a integer part.
-   */
-  else if (f_pos < 0) {
-
-    /**
-     * Shift the mantissa to its correct position 
-     * after the floating point offset.
-     */
-    mant >>= (-f_pos - 1);
-  }
-
-  /**
-   * Generate the integer part with 20 places.
-   */
-  if (hi_di) {
-    str += Util_QuickUnsignedConvert(str, hi_di, 20, 0);
-  } 
-  else {
-    *str++ = '0';
-  }
-  /**
-   * Place in the floating point.
-   */
-  *str++ = '.';
-
-  u64 lo_di = 0;
-  u8 off = 52; /** Scan from last bit pos */
-  u64 msk = 1ULL << 12; /** Mask to check if bit is set */
-  u8 d_pos;
-
-  if (mant) {
-
-    while (off--) {
-        if (msk & mant) {
-
-            d_pos = off + 1;
-
-            if (d_pos >= 20) {
-
-                /**
-                 * Apply the corresponding precomputed 
-                 * significant digits of the bit position 
-                 * to reduce overhead.
-                 */
-                lo_di += SIG_PRECMP[d_pos - 20];
-            }
-            else {
-
-                generate_lower_digits(&lo_di, d_pos);
-            }
-        }
-
-        msk <<= 1;
-    }
-
-    /**
-     * Generate the decimal places with at max 18 significant 
-     * figures and zero padding in front.
-     */
-    str += Util_QuickUnsignedConvert(str, lo_di, 18, 1);
-
-  } else {
-
-    /**
-     * Write 0 to the decimal places if mantissa is 0.
-     */
-    *str++ = '0';
-  }
-
-  return (u8) (str - str_base);
+  printf("pow: %d, exp: %d, man: %lld\n", pow, prod.exp, man >> (63 - prod.exp));
 }

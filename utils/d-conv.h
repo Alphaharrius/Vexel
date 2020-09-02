@@ -7,7 +7,7 @@
  * d-conv.h
  */
 
-#include "u-conv.h"
+#include "../core/Vexel.h"
 
 u8 Util_QuickDoubleConvert(u8 *buff, double val);
 
