@@ -9,6 +9,6 @@
 
 #include "../core/Vexel.h"
 
-u8 Util_QuickDoubleConvert(u8 *buff, double val);
+u8 Util_QuickDoubleConvert(u8 *str, double num);
 
 #endif
