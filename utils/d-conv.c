@@ -133,7 +133,6 @@ Util_QuickDoubleConvert(u8 *str, double num)
   exp = (int) D_EXP(u_num) - 1023;
 
   u64 di = D_MAN(u_num);
-  printf("exp=%d, di=%llx\n", exp, di);
   if (exp > 52) {
     di <<= (exp - 52);
   } else {
